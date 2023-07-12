@@ -3,6 +3,7 @@ package parser_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
 	"github.com/will-wow/larkdown/parser"
 )
 
@@ -12,57 +13,27 @@ func TestParse(t *testing.T) {
 			parser.NewSpecHeading("my-heading", 1),
 		}))
 
-		// want := parser.Document{parser.NewBaseNode(
-		// 	[]parser.Node{
-		// 		&parser.Heading{Id: "my-heading"},
-		// 	},
-		// )}
-
 		source := []byte(md)
 
 		got, err := parser.Parse(source, *spec)
-		if err != nil {
-			t.Fatalf("got error %v", err)
-		}
+		require.NoError(t, err)
 
 		childHeading, ok := got.SubHeadings["my-heading"]
-		if !ok {
-			t.Fatal("my-heading not found")
-		}
-		if childHeading.Level != 1 {
-			t.Fatalf("got level %d, want %d", childHeading.Level, 1)
-		}
-		if text := childHeading.Text(source); string(text) != "My Heading" {
-			t.Fatalf("got text %s, want %s", string(text), "My Heading")
-		}
+		require.True(t, ok)
+		require.Equal(t, 1, childHeading.Level)
+		require.Equal(t, "My Heading", string(childHeading.Text(source)))
 
 		subHeading1, ok := got.SubHeadings["my-heading"].SubHeadings["my-subheading"]
-		if !ok {
-			t.Fatal("my-subheading not found")
-		}
-		if subHeading1.Level != 2 {
-			t.Fatalf("got level %d, want %d", childHeading.Level, 2)
-		}
-		if subHeading1.Parent.Id != "my-heading" {
-			t.Fatalf("got parent id %s, want %s", subHeading1.Parent.Id, "my-heading")
-		}
-		if text := subHeading1.Text(source); string(text) != "My Subheading" {
-			t.Fatalf("got text %s, want %s", string(text), "My Subheading")
-		}
+		require.True(t, ok)
+		require.Equal(t, 2, subHeading1.Level)
+		require.Equal(t, "my-heading", subHeading1.Parent.Id)
+		require.Equal(t, "My Subheading", string(subHeading1.Text(source)))
 
 		subHeading2, ok := got.SubHeadings["my-heading"].SubHeadings["second-subheading"]
-		if !ok {
-			t.Fatal("second-subheading not found")
-		}
-		if subHeading2.Level != 2 {
-			t.Fatalf("got level %d, want %d", childHeading.Level, 2)
-		}
-		if subHeading2.Parent.Id != "my-heading" {
-			t.Fatalf("got parent id %s, want %s", subHeading2.Parent.Id, "my-heading")
-		}
-		if text := subHeading2.Text(source); string(text) != "Second Subheading" {
-			t.Fatalf("got text %s, want %s", string(text), "Second Subheading")
-		}
+		require.True(t, ok)
+		require.Equal(t, 2, subHeading2.Level)
+		require.Equal(t, "my-heading", subHeading2.Parent.Id)
+		require.Equal(t, "Second Subheading", string(subHeading2.Text(source)))
 	})
 }
 
