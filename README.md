@@ -22,6 +22,18 @@ go install
 make build
 ```
 
+### Format
+
+```bash
+make fmt
+```
+
+### Lint
+
+```bash
+make lint
+```
+
 ### Test
 
 ```bash

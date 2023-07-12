@@ -4,13 +4,16 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/will-wow/larkdown/spec"
+
 	"github.com/will-wow/larkdown/parser"
 )
 
 func TestParse(t *testing.T) {
 	t.Run("Parse", func(t *testing.T) {
-		spec := parser.NewSpecDocument(parser.WithChildren([]parser.SpecNode{
-			parser.NewSpecHeading("my-heading", 1),
+		spec := spec.NewSpecDocument(spec.WithChildren([]spec.SpecNode{
+			spec.NewSpecHeading("my-heading", 1),
 		}))
 
 		source := []byte(md)

@@ -8,90 +8,14 @@ import (
 	"github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/text"
 	"go.abhg.dev/goldmark/hashtag"
+
+	"github.com/will-wow/larkdown/spec"
 )
 
 var attrNameID = []byte("id")
 
-type SpecNode interface {
-	setChildren(nodes []SpecNode)
-	setOptional(optional bool)
-}
-
-type BaseSpecNode struct {
-	optional bool
-	// remove from final output
-	// remove bool
-
-	children []SpecNode
-}
-
-func (n *BaseSpecNode) setChildren(nodes []SpecNode) {
-	n.children = nodes
-}
-
-func (n *BaseSpecNode) setOptional(optional bool) {
-	n.optional = optional
-}
-
-type SpecOption func(n SpecNode)
-
-func WithChildren(nodes []SpecNode) SpecOption {
-	return func(n SpecNode) {
-		n.setChildren(nodes)
-	}
-}
-
-func WithOptional() SpecOption {
-	return func(n SpecNode) {
-		n.setOptional(true)
-	}
-}
-
-type SpecDocument struct {
-	BaseSpecNode
-}
-
-func applyOpts(n SpecNode, opts []SpecOption) {
-	for _, opt := range opts {
-		opt(n)
-
-	}
-}
-
-func NewSpecDocument(opts ...SpecOption) *SpecDocument {
-	x := SpecDocument{}
-
-	applyOpts(&x, opts)
-
-	return &x
-}
-
-type SpecHeading struct {
-	BaseSpecNode
-	level int
-	id    string
-}
-
-func NewSpecHeading(id string, level int, opts ...SpecOption) *SpecHeading {
-	x := SpecHeading{}
-
-	applyOpts(&x, opts)
-
-	return &x
-
-}
-
-type SpecList struct {
-	BaseSpecNode
-}
-
-func NewSpecList(opts ...SpecOption) *SpecList {
-	x := SpecList{}
-	applyOpts(&x, opts)
-	return &x
-}
-
-func Parse(source []byte, spec SpecDocument) (Heading, error) {
+// Parse parses a markdown document into a Heading tree
+func Parse(source []byte, spec spec.SpecDocument) (Heading, error) {
 	md := goldmark.New(
 		goldmark.WithExtensions(&hashtag.Extender{}),
 		goldmark.WithParserOptions(
@@ -151,152 +75,11 @@ func Parse(source []byte, spec SpecDocument) (Heading, error) {
 			return Heading{}, fmt.Errorf("unknown node type %T", node)
 		}
 
-		// if isNode(child) {
-		// 	return child
-		// }
-
-		// if found := findNode(child, isNode); found != nil {
-		// 	return found
-		// }
-
 		child = child.NextSibling()
 	}
 
 	return tree, nil
 }
-
-// func main() {
-// 	spec := NewSpecDocument(WithChildren([]SpecNode{
-// 		NewSpecHeading("ingredients", 2, WithChildren(
-// 			[]SpecNode{
-// 				NewSpecHeading("buy", 3, WithChildren(
-// 					[]SpecNode{
-// 						NewSpecList(),
-// 					},
-// 				)),
-// 				NewSpecHeading("on-hand", 3, WithChildren(
-// 					[]SpecNode{
-// 						NewSpecList(),
-// 					},
-// 				)),
-// 			})),
-// 		NewSpecHeading("instructions", 2, WithChildren(
-// 			[]SpecNode{
-// 				NewSpecList(),
-// 			},
-// 		)),
-// 		NewSpecHeading("notes", 2, WithOptional()),
-// 	}))
-
-// 	md := goldmark.New(
-// 		goldmark.WithExtensions(&hashtag.Extender{}),
-// 		goldmark.WithParserOptions(
-// 			parser.WithAutoHeadingID(),
-// 		),
-// 	)
-
-// 	source := `
-// # hello hi hello
-
-// #foo
-
-// ## world
-
-// foo
-// bar
-
-// baz
-
-// boo
-
-// - alpha
-// - beta
-
-// 1. one
-// 2. two
-
-// world!
-// 	`
-
-// 	doc := md.Parser().Parse(text.NewReader([]byte(source)))
-
-// 	// activeSpecNode := spec
-
-// 	// ast := Document{}
-
-// 	child := doc.FirstChild()
-// 	for {
-// 		if child == nil {
-// 			break
-// 		}
-
-// 		// if isNode(child) {
-// 		// 	return child
-// 		// }
-
-// 		// if found := findNode(child, isNode); found != nil {
-// 		// 	return found
-// 		// }
-
-// 		child = child.NextSibling()
-// 	}
-
-// 	// var child in go
-
-// 	// variable in go
-
-// 	// var child ast.Node
-// 	// for i := 0; i < doc.ChildCount(); i++ {
-// 	// 	if i == 0 {
-// 	// 		child = doc.FirstChild()
-// 	// 	} else {
-// 	// 		child = child.NextSibling()
-// 	// 	}
-
-// 	// 	if v, ok := (child.(*ast.Heading)); ok {
-// 	// 		fmt.Println("h", string(v.Text(src)))
-// 	// 		idAttr, valid := v.Attribute([]byte(optAutoHeadingID))
-// 	// 		if !valid {
-// 	// 			continue
-// 	// 		}
-// 	// 		idBytes, ok := idAttr.([]byte)
-// 	// 		if !ok {
-// 	// 			continue
-// 	// 		}
-
-// 	// 	} else {
-
-// 	// 		fmt.Println("p", string(child.Text(src)))
-// 	// 	}
-
-// 	// }
-
-// }
-
-// Find the first node that matches the given predicate.
-// Using a depth-first search.
-// func findNode(node ast.Node, isNode func(n ast.Node) bool) ast.Node {
-// 	child := node.FirstChild()
-// 	for {
-// 		if child == nil {
-// 			return nil
-// 		}
-// 		if isNode(child) {
-// 			return child
-// 		}
-
-// 		if found := findNode(child, isNode); found != nil {
-// 			return found
-// 		}
-
-// 		child = child.NextSibling()
-// 	}
-
-// }
-
-// type Document struct {
-// 	Children []Node
-// }
 
 type Node interface {
 	Children() []Node
@@ -337,16 +120,6 @@ type Heading struct {
 type Paragraph struct {
 	BaseNode
 }
-
-// func (h *Heading) FindHeading(id string, level int) (Node, bool) {
-// 	return nil, false
-// }
-
-// type HeadingGroup struct {
-// 	name     string
-// 	level    int
-// 	children map[string]Group
-// }
 
 func getHeadingId(node ast.Heading, source []byte) (id string, err error) {
 	idAttr, valid := node.Attribute(attrNameID)

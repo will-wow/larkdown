@@ -1,0 +1,5 @@
+{
+  "go.lintTool": "golangci-lint",
+  "go.lintFlags": ["--fast"],
+  "gopls": { "formatting.local": "github.com/will-wow/larkdown" }
+}

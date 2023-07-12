@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/will-wow/larkdown/spec"
+
 	"github.com/will-wow/larkdown/parser"
 )
 
@@ -31,7 +33,7 @@ func run() error {
 		return fmt.Errorf("failed to open file: %w", err)
 	}
 
-	data, err := parser.Parse(source, *parser.NewSpecDocument())
+	data, err := parser.Parse(source, *spec.NewSpecDocument())
 	if err != nil {
 		return fmt.Errorf("failed to parse: %w", err)
 	}
