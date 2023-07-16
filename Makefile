@@ -1,11 +1,5 @@
 default: test
 
-build:
-	go build -o bin/larkdown main.go
-
-run:
-	go run main.go
-
 test:
 	go test -v ./...
 
@@ -14,3 +8,5 @@ lint:
 
 fmt:
 	goimports -w -local github.com/will-wow/larkdown .
+
+ready: fmt lint test

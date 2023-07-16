@@ -11,10 +11,6 @@ import (
 	"github.com/will-wow/larkdown/preprocess"
 )
 
-// TODO: queries:
-// Code block with language
-// Nth Instance Query that retunrns a "don't pop this query", and keeps state of how many times it's called?
-
 // Interface for a node matcher.
 type Node interface {
 	Match(node ast.Node, index int, source []byte) (ok bool)
@@ -37,6 +33,11 @@ func (m Branch) Match(node ast.Node, index int, source []byte) bool {
 		return false
 	}
 
+	// If the name is empty, we're matching any heading of the given level.
+	if len(m.Name) == 0 {
+		return true
+	}
+
 	if m.CaseInsensitive {
 		return bytes.EqualFold(node.FirstChild().Text(source), m.Name)
 	}
@@ -44,7 +45,21 @@ func (m Branch) Match(node ast.Node, index int, source []byte) bool {
 }
 
 func (m Branch) String() string {
-	return fmt.Sprintf("[%s %s]", strings.Repeat("#", m.Level), m.Name)
+	var level string
+	if m.Level == 0 {
+		// If the level is unspecified, note that.
+		level = "#?"
+	} else {
+		// Otherwise indicate the level with hashes.
+		level = strings.Repeat("#", m.Level)
+	}
+
+	// If the name is empty, we're matching any heading of the given level.
+	if len(m.Name) == 0 {
+		return fmt.Sprintf("[%s]", level)
+	}
+
+	return fmt.Sprintf("[%s %s]", level, string(m.Name))
 }
 
 // Matches an ordered or unordered list.

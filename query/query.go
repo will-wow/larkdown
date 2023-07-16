@@ -106,9 +106,10 @@ func QueryTree(tree preprocess.Tree, matcher []match.Node) (found ast.Node, err 
 		return node, nil
 	}
 
+	// Add the last failed match the error
 	queryError.addFailedMatch(matcher[activeQueryIndex])
 
-	// TODO: Record all the query matches, so they can be used to provide context
+	// Return the error with the list of good matches and the bad match
 	return nil, queryError
 }
 

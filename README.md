@@ -47,9 +47,9 @@ like this
 }
 ```
 
-and then pull data from that data structure.
+and then query that data structure to find a node, and unmarshal that node into useful data like strings nad slices of strings.
 
-`larkdown` makes heavy use of the excellent [goldmark](https://github.com/yuin/goldmark) library for parsing Commonmark markdown into a structure that is easy to work with.
+`larkdown` makes heavy use of the excellent [goldmark](https://github.com/yuin/goldmark) library for parsing [Commonmark](https://commonmark.org) markdown into a structure that is easy to work with.
 
 ## Motivation
 
@@ -126,18 +126,6 @@ func ParseFile(filename string) (results []string, err error) {
 
 ## Contributing
 
-### Install dependencies
-
-```bash
-go install
-```
-
-### Build
-
-```bash
-make build
-```
-
 ### Format
 
 ```bash
@@ -154,4 +142,11 @@ make lint
 
 ```bash
 make test
+```
+
+### Make ready for a commit
+
+```bash
+# runs fmt lint test
+make ready
 ```
