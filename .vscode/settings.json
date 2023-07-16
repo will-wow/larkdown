@@ -1,5 +1,16 @@
 {
   "go.lintTool": "golangci-lint",
   "go.lintFlags": ["--fast"],
-  "gopls": { "formatting.local": "github.com/will-wow/larkdown" }
+  "gopls": {
+    "formatting.local": "github.com/will-wow/larkdown"
+  },
+  "cSpell.words": [
+    "goldmark",
+    "larkdown",
+    "unmarshals",
+    "unmarshaling",
+    "unmarshaled",
+    "unmarshaler",
+    "unmarshalers"
+  ]
 }

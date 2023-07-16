@@ -1,38 +1,3 @@
-package parser_test
-
-import (
-	"testing"
-
-	"github.com/stretchr/testify/require"
-
-	"github.com/will-wow/larkdown/parser"
-)
-
-func TestParse(t *testing.T) {
-	t.Run("ParseRecipe", func(t *testing.T) {
-		source := []byte(recipe)
-
-		tree, err := parser.MarkdownToTree(source)
-		require.NoError(t, err)
-
-		query := []parser.NodeQuery{
-			parser.BranchQuery{Level: 2, Name: []byte("Ingredients")},
-			parser.BranchQuery{Level: 3, Name: []byte("Buy")},
-			parser.IndexQuery{Index: 1, Query: parser.ListQuery{}},
-		}
-
-		match, err := parser.FindMatch(tree, query, source)
-		require.NoError(t, err)
-
-		list := &parser.ListParser{}
-		err = parser.ParseResult(match, source, list)
-		require.NoError(t, err)
-
-		require.Equal(t, []string{"1 Medium Apple", "1 small-medium carrot", "1 banana", "2 eggs"}, list.Items)
-	})
-}
-
-var recipe = `
 #baby-breakfast #baby #dairy-free #muffins
 
 These Baby Led Weaning Muffins have no added sugar perfect for babies, toddlers, and kids. A Soft spongy style Healthy Baby Muffin with Apple Banana and Carrot.
@@ -69,4 +34,3 @@ These Baby Led Weaning Muffins have no added sugar perfect for babies, toddlers,
 12. Cool
 13. Serve
 14. These muffins can be stored in an airtight container for 3 days, or they can be frozen.
-`
