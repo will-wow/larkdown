@@ -10,14 +10,8 @@ import (
 	"github.com/will-wow/larkdown/query"
 )
 
-// A markdown document parsed into a tree of goldmark AST nodes.
-type Tree struct {
-	Doc    preprocess.TreeBranch
-	Source []byte
-}
-
 // Parse a markdown document into a tree of goldmark AST nodes for querying and unmarshaling.
-func MarkdownToTree(source []byte) (Tree, error) {
+func MarkdownToTree(source []byte) (preprocess.Tree, error) {
 	md := goldmark.New()
 	doc := md.Parser().Parse(text.NewReader(source))
 
@@ -26,18 +20,13 @@ func MarkdownToTree(source []byte) (Tree, error) {
 
 // Parse an already parsed markdown document into a tree of goldmark AST nodes for querying and unmarshaling.
 // Use this to apply goldmark extensions before processing.
-func GoldmarkToTree(doc ast.Node, source []byte) (Tree, error) {
-	tree, err := preprocess.GoldmarkToTree(doc, source)
-	if err != nil {
-		return Tree{}, err
-	}
-
-	return Tree{Doc: tree, Source: source}, nil
+func GoldmarkToTree(doc ast.Node, source []byte) (preprocess.Tree, error) {
+	return preprocess.GoldmarkToTree(doc, source)
 }
 
 // Use a matcher to find a node, and then unmarshal its contents into structured data.
-func Unmarshal(tree Tree, matcher []match.Node, parser NodeUnmarshaler) error {
-	found, err := query.FindMatch(tree.Doc, matcher, tree.Source)
+func Unmarshal(tree preprocess.Tree, matcher []match.Node, parser NodeUnmarshaler) error {
+	found, err := query.QueryTree(tree, matcher)
 	if err != nil {
 		return err
 	}

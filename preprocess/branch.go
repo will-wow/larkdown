@@ -20,7 +20,7 @@ func (n *TreeBranch) Kind() ast.NodeKind {
 }
 
 // A tree branch for the root of the document.
-func newTreeBranchRoot() *TreeBranch {
+func NewTreeBranchRoot() *TreeBranch {
 	return &TreeBranch{
 		TreeParent: nil,
 		Level:      0,
@@ -28,7 +28,7 @@ func newTreeBranchRoot() *TreeBranch {
 	}
 }
 
-func newTreeBranch(heading *ast.Heading, parent *TreeBranch) *TreeBranch {
+func NewTreeBranch(heading *ast.Heading, parent *TreeBranch) *TreeBranch {
 	if heading == nil {
 		panic("heading cannot be nil")
 	}

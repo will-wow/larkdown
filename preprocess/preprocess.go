@@ -6,9 +6,15 @@ import (
 	"github.com/yuin/goldmark/ast"
 )
 
+// A markdown document parsed into a tree of goldmark AST nodes.
+type Tree struct {
+	Doc    TreeBranch
+	Source []byte
+}
+
 // Converts an already parsed goldmark ast into a Heading tree
-func GoldmarkToTree(doc ast.Node, source []byte) (TreeBranch, error) {
-	tree := newTreeBranchRoot()
+func GoldmarkToTree(doc ast.Node, source []byte) (Tree, error) {
+	tree := NewTreeBranchRoot()
 
 	// The active branch, which can move down as we go through levels
 	activeTreeBranch := tree
@@ -34,7 +40,7 @@ func GoldmarkToTree(doc ast.Node, source []byte) (TreeBranch, error) {
 			// Create a new TreeHeading,
 			// with the parent being the active heading
 			// and the first child being the real heading
-			treeHeading := newTreeBranch(node, activeTreeBranch)
+			treeHeading := NewTreeBranch(node, activeTreeBranch)
 
 			// Make the new heading a child of the active heading.
 			activeTreeBranch.AppendChild(activeTreeBranch, treeHeading)
@@ -46,7 +52,7 @@ func GoldmarkToTree(doc ast.Node, source []byte) (TreeBranch, error) {
 		}
 	}
 
-	return *tree, nil
+	return Tree{Doc: *tree, Source: source}, nil
 }
 
 // If we are not at the root of the tree,

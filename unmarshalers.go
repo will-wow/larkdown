@@ -18,15 +18,25 @@ type StringList struct {
 	Items []string
 }
 
-func (p *StringList) UnmarshalNode(node ast.Node, source []byte) error {
+func (u *StringList) UnmarshalNode(node ast.Node, source []byte) error {
 	list, ok := node.(*ast.List)
 	if !ok {
 		return fmt.Errorf("expected list node")
 	}
 
 	gmast.ForEachListItem(list, source, func(item ast.Node, _ int) {
-		p.Items = append(p.Items, string(item.Text(source)))
+		u.Items = append(u.Items, string(item.Text(source)))
 	})
 
+	return nil
+}
+
+// Unmarshals any goldmark node's text into a string.
+type NodeText struct {
+	Text string
+}
+
+func (u *NodeText) UnmarshalNode(node ast.Node, source []byte) error {
+	u.Text = string(node.Text(source))
 	return nil
 }

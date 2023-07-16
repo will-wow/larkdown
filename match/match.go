@@ -3,6 +3,8 @@ package match
 
 import (
 	"bytes"
+	"fmt"
+	"strings"
 
 	"github.com/yuin/goldmark/ast"
 
@@ -16,6 +18,7 @@ import (
 // Interface for a node matcher.
 type Node interface {
 	Match(node ast.Node, index int, source []byte) (ok bool)
+	String() string
 }
 
 // Matches a heading by level and name.
@@ -25,29 +28,35 @@ type Branch struct {
 	CaseInsensitive bool
 }
 
-func (q Branch) Match(node ast.Node, index int, source []byte) bool {
+func (m Branch) Match(node ast.Node, index int, source []byte) bool {
 	heading, ok := node.(*preprocess.TreeBranch)
 	if !ok {
 		return false
 	}
-	if q.Level != 0 && heading.Level != q.Level {
+	if m.Level != 0 && heading.Level != m.Level {
 		return false
 	}
 
-	if q.CaseInsensitive {
-		return bytes.EqualFold(node.FirstChild().Text(source), q.Name)
+	if m.CaseInsensitive {
+		return bytes.EqualFold(node.FirstChild().Text(source), m.Name)
 	}
-	return bytes.Equal(node.FirstChild().Text(source), q.Name)
+	return bytes.Equal(node.FirstChild().Text(source), m.Name)
+}
+
+func (m Branch) String() string {
+	return fmt.Sprintf("[%s %s]", strings.Repeat("#", m.Level), m.Name)
 }
 
 // Matches an ordered or unordered list.
-type List struct {
-	CaseInsensitive bool
-}
+type List struct{}
 
-func (q List) Match(node ast.Node, index int, source []byte) bool {
+func (m List) Match(node ast.Node, index int, source []byte) bool {
 	_, ok := node.(*ast.List)
 	return ok
+}
+
+func (m List) String() string {
+	return ".list"
 }
 
 // Wraps another query, only when it's the nth child of the parent.
@@ -57,10 +66,36 @@ type Index struct {
 	Node  Node
 }
 
-func (q Index) Match(node ast.Node, index int, source []byte) bool {
-	if q.Index != index {
+func NewIndex(index int, node Node) *Index {
+	return &Index{
+		Index: index,
+		Node:  node,
+	}
+}
+
+func (m Index) Match(node ast.Node, index int, source []byte) bool {
+	if m.Index != index {
 		return false
 	}
 
-	return q.Node.Match(node, index, source)
+	return m.Node.Match(node, index, source)
+}
+
+func (m Index) String() string {
+	return fmt.Sprintf("[%d]%s", m.Index, m.Node.String())
+}
+
+// Matches any node. Useful as a fallback for index matches.
+type AnyNode struct{}
+
+func NewAnyNode() *AnyNode {
+	return &AnyNode{}
+}
+
+func (m AnyNode) Match(node ast.Node, index int, source []byte) bool {
+	return true
+}
+
+func (m AnyNode) String() string {
+	return ".any"
 }

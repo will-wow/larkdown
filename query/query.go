@@ -1,8 +1,9 @@
-// query handles finding a match in a tree, but not unmarshalling the node.
+// query handles finding a match in a tree, but not unmarshaling the node.
 // This package should not generally be used directly.
 package query
 
 import (
+	"bytes"
 	"fmt"
 
 	"github.com/yuin/goldmark/ast"
@@ -11,8 +12,46 @@ import (
 	"github.com/will-wow/larkdown/preprocess"
 )
 
-// Apply a matcher to a tree, and return the matching node for unmarshalling.
-func FindMatch(doc preprocess.TreeBranch, matcher []match.Node, source []byte) (ast.Node, error) {
+// Error returned when a query fails to match.
+// Includes the list of matches that were found, and the match that failed.
+// Prints an error message that can be used to debug the query.
+type QueryError struct {
+	Matches     []match.Node
+	FailedMatch match.Node
+}
+
+func newQueryError(matcherLength int) *QueryError {
+	return &QueryError{
+		Matches:     make([]match.Node, 0, matcherLength),
+		FailedMatch: nil,
+	}
+}
+
+func (e *QueryError) addMatch(node match.Node) {
+	e.Matches = append(e.Matches, node)
+}
+
+func (e *QueryError) addFailedMatch(node match.Node) {
+	e.FailedMatch = node
+}
+
+func (e *QueryError) Error() string {
+	var matches bytes.Buffer
+
+	matches.WriteString("document")
+
+	for _, match := range e.Matches {
+		matches.WriteString(match.String())
+	}
+
+	return fmt.Sprintf("failed to match query: %s did not have a %s", matches.String(), e.FailedMatch)
+}
+
+// Apply a matcher to a tree, and return the matching node for unmarshaling.
+func QueryTree(tree preprocess.Tree, matcher []match.Node) (found ast.Node, err error) {
+	doc := tree.Doc
+	source := tree.Source
+
 	queryCount := len(matcher)
 
 	if queryCount == 0 {
@@ -21,6 +60,8 @@ func FindMatch(doc preprocess.TreeBranch, matcher []match.Node, source []byte) (
 
 	activeQueryIndex := 0
 	queryChildIndex := 0
+
+	queryError := newQueryError(queryCount)
 
 	node := doc.FirstChild()
 
@@ -46,6 +87,8 @@ func FindMatch(doc preprocess.TreeBranch, matcher []match.Node, source []byte) (
 			continue
 		}
 
+		queryError.addMatch(matcher[activeQueryIndex])
+
 		// If we have a query match, then:
 
 		// If we are not at the last query:
@@ -63,9 +106,15 @@ func FindMatch(doc preprocess.TreeBranch, matcher []match.Node, source []byte) (
 		return node, nil
 	}
 
+	queryError.addFailedMatch(matcher[activeQueryIndex])
+
 	// TODO: Record all the query matches, so they can be used to provide context
-	return nil, fmt.Errorf("no match")
+	return nil, queryError
 }
+
+// func matchesForError(matches []match.Node) string {
+// 	return fmt.Sprintf("matches: %+v", matches)
+// }
 
 func getNextParentSiblingToProcess(node ast.Node) ast.Node {
 	if node == nil {
