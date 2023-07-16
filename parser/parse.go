@@ -11,16 +11,15 @@ import (
 	"go.abhg.dev/goldmark/hashtag"
 )
 
-var attrNameID = []byte("id")
+// TODO: queries:
+// Code block with language
+// Nth Instance Query that retunrns a "don't pop this query", and keeps state of how many times it's called?
 
 type NodeQuery interface {
 	Match(node ast.Node, index int, source []byte) (ok bool)
 }
 
-// TODO: queries:
-// Code block with language
-// Nth Instance Query that retunrns a "don't pop this query", and keeps state of how many times it's called?
-
+// Matches a heading by level and name.
 type BranchQuery struct {
 	Level           int
 	Name            []byte
@@ -42,6 +41,7 @@ func (q BranchQuery) Match(node ast.Node, index int, source []byte) bool {
 	return bytes.Equal(node.FirstChild().Text(source), q.Name)
 }
 
+// Matches an ordered or unordered list.
 type ListQuery struct {
 	CaseInsensitive bool
 }
@@ -207,24 +207,6 @@ func getNextNodeToProcess(node ast.Node) ast.Node {
 	return getNextParentSiblingToProcess(node.Parent())
 }
 
-// func Unmarshal(source []byte, v interface{}) error {
-// 	md := goldmark.New(
-// 		goldmark.WithExtensions(&hashtag.Extender{}),
-// 		goldmark.WithParserOptions(
-// 			parser.WithAutoHeadingID(),
-// 		),
-// 	)
-
-// 	doc := md.Parser().Parse(text.NewReader(source))
-
-// 	rv := reflect.ValueOf(v)
-
-// 	if rv.Kind() != reflect.Pointer || rv.IsNil() {
-// 		return &json.InvalidUnmarshalError{Type: reflect.TypeOf(v)}
-// 	}
-
-// }
-
 // Parse parses a markdown document into a Heading tree
 func MarkdownToTree(source []byte) (TreeBranch, error) {
 	md := goldmark.New(
@@ -300,17 +282,6 @@ func appendToBranch(activeTreeBranch *TreeBranch, node ast.Node) {
 	activeTreeBranch.AppendChild(activeTreeBranch, node)
 }
 
-type Node interface {
-	Children() []Node
-	// FindHeading(id string, level int) (Node, bool)
-	// GetNthChild(n int) (Node, bool)
-}
-
-type TreeNode interface {
-	Parent() TreeNode
-	IsLeaf() bool
-}
-
 type TreeBranch struct {
 	ast.BaseInline
 	TreeParent *TreeBranch
@@ -350,91 +321,4 @@ func NewTreeBranch(heading *ast.Heading, parent *TreeBranch) *TreeBranch {
 	threeBranch.AppendChild(threeBranch, heading)
 
 	return threeBranch
-}
-
-// func (h *TreeHeading) Parent() *TreeHeading {
-// 	return h.parent
-// }
-
-// func (h *TreeHeading) IsLeaf() bool {
-// 	return false
-// }
-
-// func (h *TreeHeading) NextChild() bool {
-// 	return false
-// }
-
-// type TreeLeaf struct {
-// 	Node ast.Node
-// }
-
-// func (h *TreeLeaf) Parent() *TreeBranch {
-// 	return nil
-// }
-
-// func (h *TreeLeaf) IsLeaf() bool {
-// 	return true
-// }
-
-// type BaseNode struct {
-// 	children []Node
-// 	astNode  ast.Node
-// }
-
-// func (n *BaseNode) Children() []Node {
-// 	return n.children
-// }
-
-// func (n *BaseNode) Lines() *text.Segments {
-// 	return n.astNode.Lines()
-// }
-
-// func (n *BaseNode) Text(source []byte) []byte {
-// 	return n.astNode.Text(source)
-// }
-
-// type Document struct {
-// 	BaseNode
-// }
-
-// type Heading struct {
-// 	BaseNode
-// 	Name        string
-// 	Level       int
-// 	Parent      *Heading
-// 	SubHeadings map[string]*Heading
-// }
-
-// type Paragraph struct {
-// 	BaseNode
-// }
-
-// type List struct {
-// 	BaseNode
-// }
-
-// func getHeadingId(node ast.Heading, source []byte) (id string, err error) {
-// 	idAttr, valid := node.Attribute(attrNameID)
-// 	if !valid {
-// 		return id, fmt.Errorf("heading %s has no id", node.Text(source))
-// 	}
-// 	idBytes, ok := idAttr.([]byte)
-// 	if !ok {
-// 		return id, fmt.Errorf("heading %s id cannot be decoded", node.Text(source))
-// 	}
-// 	return string(idBytes), nil
-// }
-
-func Reverse[T any](list []T) []T {
-	// Make a copy
-	reverse := make([]T, len(list))
-	copy(list, reverse)
-
-	// Reverse
-	for i := len(reverse)/2 - 1; i >= 0; i-- {
-		opp := len(reverse) - 1 - i
-		reverse[i], reverse[opp] = reverse[opp], reverse[i]
-	}
-
-	return reverse
 }

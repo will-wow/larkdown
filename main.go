@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/will-wow/larkdown/spec"
-
 	"github.com/will-wow/larkdown/parser"
 )
 

@@ -8,49 +8,7 @@ import (
 	"github.com/will-wow/larkdown/parser"
 )
 
-type List struct {
-	Items []string `json:"items"`
-}
-
-type Ingredients struct {
-	Buy    List `json:"buy"`
-	OnHand List `json:"on-hand"`
-}
-
-type Recipe struct {
-	Ingredients  Ingredients `json:"ingredients"`
-	Instructions List        `json:"instructions"`
-}
-
 func TestParse(t *testing.T) {
-	// t.Run("Parse", func(t *testing.T) {
-	// 	mdSpec := spec.NewSpecDocument(spec.WithChildren([]spec.SpecNode{
-	// 		spec.NewSpecHeading("my-heading", 1),
-	// 	}))
-
-	// 	source := []byte(md)
-
-	// 	got, err := parser.MarkdownToTree(source, *mdSpec)
-	// 	require.NoError(t, err)
-
-	// 	childHeading, ok := got.SubHeadings["my-heading"]
-	// 	require.True(t, ok)
-	// 	require.Equal(t, 1, childHeading.Level)
-	// 	require.Equal(t, "My Heading", string(childHeading.Text(source)))
-
-	// 	subHeading1, ok := got.SubHeadings["my-heading"].SubHeadings["my-subheading"]
-	// 	require.True(t, ok)
-	// 	require.Equal(t, 2, subHeading1.Level)
-	// 	require.Equal(t, "my-heading", subHeading1.Parent.Id)
-	// 	require.Equal(t, "My Subheading", string(subHeading1.Text(source)))
-
-	// 	subHeading2, ok := got.SubHeadings["my-heading"].SubHeadings["second-subheading"]
-	// 	require.True(t, ok)
-	// 	require.Equal(t, 2, subHeading2.Level)
-	// 	require.Equal(t, "my-heading", subHeading2.Parent.Id)
-	// 	require.Equal(t, "Second Subheading", string(subHeading2.Text(source)))
-	// })
-
 	t.Run("ParseRecipe", func(t *testing.T) {
 		source := []byte(recipe)
 
@@ -67,25 +25,12 @@ func TestParse(t *testing.T) {
 		require.NoError(t, err)
 
 		list := &parser.ListParser{}
-		parser.ParseResult(match, source, list)
+		err = parser.ParseResult(match, source, list)
+		require.NoError(t, err)
 
 		require.Equal(t, []string{"1 Medium Apple", "1 small-medium carrot", "1 banana", "2 eggs"}, list.Items)
 	})
 }
-
-var md = `
-# My Heading
-
-Big stuff
-
-## My Subheading
-
-Medium stuff
-
-## Second Subheading
-
-More medium stuff
-`
 
 var recipe = `
 #baby-breakfast #baby #dairy-free #muffins
