@@ -1,6 +1,59 @@
 # larkdown
 
-Lock down your markdown
+Lock down your markdown.
+
+This package allows you to treat markdown files as a tree where headings are branches, and then extract data from that trees.
+
+It lets you treat this:
+
+```markdown
+# Title
+
+## Subheading
+
+### Sub-subheading
+
+- a list
+- of things
+
+## Another subheading
+
+Some content
+```
+
+like this
+
+```json
+{
+  "Title": [
+    "# Title",
+    {
+      "Subheading": [
+        "## Subheading",
+        {
+          "Sub-subheading": [
+            "### Sub-subheading",
+            {
+              "list": ["a list", "of things"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Another subheading": ["## Another subheading", "some content"]
+    }
+  ]
+}
+```
+
+and then pull data from that data structure.
+
+`larkdown` makes heavy use of the excellent [goldmark](https://github.com/yuin/goldmark) library for parsing Commonmark markdown into a structure that is easy to work with.
+
+## Motivation
+
+I do a lot of cooking, and I keep my recipes as markdown files edited through [Obsidian](https://obsidian.md) for ease of authoring and portability. I wanted to write some tooling to make it easier to build grocery lists for the week, and wanted to take advantage of the fact that my recipes were already regularly structured, with an `## Ingredients` heading followed by a list. This library lets me pull out that ingredient data, so I can make a shopping list and get on with my weekend.
 
 ## Usage
 
@@ -13,28 +66,35 @@ package examples
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/will-wow/larkdown"
 	"github.com/will-wow/larkdown/match"
 )
 
-func ParseFile(filename string) (results []string, err error) {
-	source, err := os.ReadFile(filename)
-	if err != nil {
-		return results, fmt.Errorf("couldn't open file: %w", err)
-	}
+var md = `
+# My Recipe
 
+Here's a long story about making dinner.
+
+## Ingredients
+
+- Chicken
+- Vegetables
+- Salt
+- Pepper
+`
+
+func ParseFile(filename string) (results []string, err error) {
 	// Preprocess the markdown into a tree where headings are branches.
-	tree, err := larkdown.MarkdownToTree(source)
+	tree, err := larkdown.MarkdownToTree([]byte(md))
 	if err != nil {
 		return results, fmt.Errorf("couldn't parse markdown: %w", err)
 	}
 
 	// Set up a matcher for find your data in the tree.
 	matcher := []match.Node{
+		match.Branch{Level: 1},
 		match.Branch{Level: 2, Name: []byte("Ingredients")},
-		match.Branch{Level: 3, Name: []byte("Buy")},
 		match.Index{Index: 1, Node: match.List{}},
 	}
 
@@ -45,12 +105,26 @@ func ParseFile(filename string) (results []string, err error) {
 		return results, fmt.Errorf("couldn't find an ingredients list: %w", err)
 	}
 
-	// Returns []string{"1 Medium Apple", "1 small-medium carrot", "1 banana", "2 eggs"}
+	// Returns []string{"Chicken", "Vegetables", "Salt", "Pepper"}
 	return list.Items, nil
 }
 ```
 
-## Development
+## Roadmap
+
+- [x] basic querying and unmarshaling of headings, lists, and text
+- [ ] matchers/unmarshalers for more nodes like codeblocks by language
+- [ ] nth instance matcher for queries like "the second list"
+- [ ] string-based query syntax, ie. `"['# heading']['## heading2'].list[1]"`
+- [ ] generic unmarshaler into json
+- [ ] cli for string-based queries and json return values
+- [ ] more docs and tests
+
+## Alternatives
+
+- [markdown-to-json](https://github.com/njvack/markdown-to-json): Python-based library for parsing markdown into JSON with a similar nested style.
+
+## Contributing
 
 ### Install dependencies
 

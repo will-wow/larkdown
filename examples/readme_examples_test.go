@@ -13,6 +13,6 @@ func TestReadme(t *testing.T) {
 		list, err := examples.ParseFile("./recipe.md")
 		require.NoError(t, err)
 
-		require.Equal(t, []string{"1 Medium Apple", "1 small-medium carrot", "1 banana", "2 eggs"}, list)
+		require.Equal(t, []string{"Chicken", "Vegetables", "Salt", "Pepper"}, list)
 	})
 }
