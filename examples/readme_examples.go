@@ -1,14 +1,3 @@
-# larkdown
-
-Lock down your markdown
-
-## Usage
-
-```bash
-go get github.com/will-wow/larkdown
-```
-
-```go
 package examples
 
 import (
@@ -48,36 +37,3 @@ func ParseFile(filename string) (results []string, err error) {
 	// Returns []string{"1 Medium Apple", "1 small-medium carrot", "1 banana", "2 eggs"}
 	return list.Items, nil
 }
-```
-
-## Development
-
-### Install dependencies
-
-```bash
-go install
-```
-
-### Build
-
-```bash
-make build
-```
-
-### Format
-
-```bash
-make fmt
-```
-
-### Lint
-
-```bash
-make lint
-```
-
-### Test
-
-```bash
-make test
-```
