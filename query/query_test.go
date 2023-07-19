@@ -5,8 +5,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"github.com/yuin/goldmark"
+	"github.com/yuin/goldmark/text"
 
-	"github.com/will-wow/larkdown"
+	"github.com/will-wow/larkdown/extension"
 	"github.com/will-wow/larkdown/match"
 	"github.com/will-wow/larkdown/query"
 )
@@ -17,8 +19,10 @@ func TestQueryTree(t *testing.T) {
 		source, err := os.ReadFile("../examples/simple.md")
 		require.NoError(t, err)
 
-		tree, err := larkdown.MarkdownToTree(source)
-		require.NoError(t, err)
+		md := goldmark.New(
+			goldmark.WithExtensions(extension.NewLarkdownExtension()),
+		)
+		tree := md.Parser().Parse(text.NewReader(source))
 
 		matcher := []match.Node{
 			match.Branch{Level: 1, Name: []byte("Title")},
@@ -26,7 +30,7 @@ func TestQueryTree(t *testing.T) {
 			// No match
 			match.Branch{Level: 3, Name: []byte("Not Real")},
 		}
-		_, err = query.QueryTree(tree, matcher)
+		_, err = query.QueryTree(tree, source, matcher)
 		require.ErrorContains(t, err, "failed to match query: document[# Title][## Subheading] did not have a [### Not Real]")
 
 		matcher = []match.Node{
@@ -34,7 +38,7 @@ func TestQueryTree(t *testing.T) {
 			// Level is wrong
 			match.Branch{Level: 3, Name: []byte("Subheading")},
 		}
-		_, err = query.QueryTree(tree, matcher)
+		_, err = query.QueryTree(tree, source, matcher)
 		require.ErrorContains(t, err, "failed to match query: document[# Title] did not have a [### Subheading]")
 
 		matcher = []match.Node{
@@ -42,7 +46,7 @@ func TestQueryTree(t *testing.T) {
 			// Missed a sublevel
 			match.Branch{Level: 3, Name: []byte("Sub-subheading")},
 		}
-		_, err = query.QueryTree(tree, matcher)
+		_, err = query.QueryTree(tree, source, matcher)
 		require.ErrorContains(t, err, "failed to match query: document[# Title] did not have a [### Sub-subheading]")
 
 		matcher = []match.Node{
@@ -52,7 +56,7 @@ func TestQueryTree(t *testing.T) {
 			// Extra list
 			match.List{},
 		}
-		_, err = query.QueryTree(tree, matcher)
+		_, err = query.QueryTree(tree, source, matcher)
 		require.ErrorContains(t, err, "failed to match query: document[# Title][## Subheading].list did not have a .list")
 
 		matcher = []match.Node{
@@ -62,7 +66,7 @@ func TestQueryTree(t *testing.T) {
 			// Bad index
 			match.NewIndex(4, match.NewAnyNode()),
 		}
-		_, err = query.QueryTree(tree, matcher)
+		_, err = query.QueryTree(tree, source, matcher)
 		require.ErrorContains(t, err, "failed to match query: document[# Title][## Subheading].list did not have a [4].any")
 	})
 }

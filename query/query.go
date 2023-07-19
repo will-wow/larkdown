@@ -9,7 +9,6 @@ import (
 	"github.com/yuin/goldmark/ast"
 
 	"github.com/will-wow/larkdown/match"
-	"github.com/will-wow/larkdown/preprocess"
 )
 
 // Error returned when a query fails to match.
@@ -48,10 +47,7 @@ func (e *QueryError) Error() string {
 }
 
 // Apply a matcher to a tree, and return the matching node for unmarshaling.
-func QueryTree(tree preprocess.Tree, matcher []match.Node) (found ast.Node, err error) {
-	doc := tree.Doc
-	source := tree.Source
-
+func QueryTree(doc ast.Node, source []byte, matcher []match.Node) (found ast.Node, err error) {
 	queryCount := len(matcher)
 
 	if queryCount == 0 {
@@ -63,7 +59,10 @@ func QueryTree(tree preprocess.Tree, matcher []match.Node) (found ast.Node, err 
 
 	queryError := newQueryError(queryCount)
 
-	node := doc.FirstChild()
+	// TODO: safety
+	node := doc.FirstChild().FirstChild()
+
+	fmt.Printf("node: %+v\n", node)
 
 	if node == nil {
 		return nil, fmt.Errorf("empty markdown file")
