@@ -3,7 +3,11 @@ package examples
 import (
 	"fmt"
 
+	"github.com/yuin/goldmark"
+	"github.com/yuin/goldmark/text"
+
 	"github.com/will-wow/larkdown"
+	"github.com/will-wow/larkdown/extension"
 	"github.com/will-wow/larkdown/match"
 )
 
@@ -21,11 +25,12 @@ Here's a long story about making dinner.
 `
 
 func ParseFile(filename string) (results []string, err error) {
+	source := []byte(md)
 	// Preprocess the markdown into a tree where headings are branches.
-	tree, err := larkdown.MarkdownToTree([]byte(md))
-	if err != nil {
-		return results, fmt.Errorf("couldn't parse markdown: %w", err)
-	}
+	md := goldmark.New(
+		goldmark.WithExtensions(extension.NewLarkdownExtension()),
+	)
+	doc := md.Parser().Parse(text.NewReader(source))
 
 	// Set up a matcher for find your data in the tree.
 	matcher := []match.Node{
@@ -36,7 +41,7 @@ func ParseFile(filename string) (results []string, err error) {
 
 	// Set up a NodeUnmarshaler to parse and store the data you want
 	list := &larkdown.StringList{}
-	err = larkdown.Unmarshal(tree, matcher, list)
+	err = larkdown.Unmarshal(doc, source, matcher, list)
 	if err != nil {
 		return results, fmt.Errorf("couldn't find an ingredients list: %w", err)
 	}

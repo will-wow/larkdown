@@ -13,7 +13,7 @@ type Tree struct {
 }
 
 // Converts an already parsed goldmark ast into a Heading tree
-func GoldmarkToTree(doc ast.Node, source []byte) (Tree, error) {
+func GoldmarkToTree(doc ast.Node, source []byte) {
 	tree := NewTreeBranchRoot()
 
 	// The active branch, which can move down as we go through levels
@@ -52,7 +52,8 @@ func GoldmarkToTree(doc ast.Node, source []byte) (Tree, error) {
 		}
 	}
 
-	return Tree{Doc: *tree, Source: source}, nil
+	// Re-append the new tree back to the document
+	doc.AppendChild(doc, tree)
 }
 
 // If we are not at the root of the tree,

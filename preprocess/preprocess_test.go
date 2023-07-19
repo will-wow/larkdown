@@ -8,14 +8,16 @@ import (
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/text"
 
-	"github.com/will-wow/larkdown/preprocess"
+	"github.com/will-wow/larkdown/extension"
 )
 
 func TestGoldmarkToTree(t *testing.T) {
 	t.Run("should not change the output of goldmark rendering", func(t *testing.T) {
 		source := []byte(md)
 
-		md := goldmark.New()
+		md := goldmark.New(
+			goldmark.WithExtensions(extension.NewLarkdownExtension()),
+		)
 		doc := md.Parser().Parse(text.NewReader(source))
 
 		var b bytes.Buffer
@@ -23,13 +25,13 @@ func TestGoldmarkToTree(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, string(want), b.String())
 
-		_, _ = preprocess.GoldmarkToTree(doc, source)
+		// // _, _ = preprocess.GoldmarkToTree(doc, source)
 
-		var b2 bytes.Buffer
-		err = md.Renderer().Render(&b2, source, doc)
-		require.NoError(t, err)
+		// var b2 bytes.Buffer
+		// err = md.Renderer().Render(&b2, source, doc)
+		// require.NoError(t, err)
 
-		require.Equal(t, string(want), b2.String())
+		// require.Equal(t, string(want), b2.String())
 	})
 }
 
