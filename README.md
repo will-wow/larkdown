@@ -113,6 +113,8 @@ func ParseFile(filename string) (results []string, err error) {
 ## Roadmap
 
 - [x] basic querying and unmarshaling of headings, lists, and text
+- [ ] make sure this works with extracting front matter
+- [ ] make sure this doesn't interfere with rendering the markdown to HTML with goldmark (possibly by wrapping nodes)
 - [ ] matchers/unmarshalers for more nodes like codeblocks by language
 - [ ] nth instance matcher for queries like "the second list"
 - [ ] string-based query syntax, ie. `"['# heading']['## heading2'].list[1]"`
@@ -126,27 +128,41 @@ func ParseFile(filename string) (results []string, err error) {
 
 ## Contributing
 
+### Install task
+
+This project uses [task](https://taskfile.dev) as its task runner.
+
+```bash
+# macos
+brew install go-task/tap/go-task
+
+# linux/wsl
+sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d
+```
+
+Or follow the [installation instructions](https://taskfile.dev/installation/) for more options.
+
 ### Format
 
 ```bash
-make fmt
+task fmt
 ```
 
 ### Lint
 
 ```bash
-make lint
+task lint
 ```
 
 ### Test
 
 ```bash
-make test
+task test
 ```
 
 ### Make ready for a commit
 
 ```bash
 # runs fmt lint test
-make ready
+task ready
 ```

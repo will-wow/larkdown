@@ -5,14 +5,14 @@
     "formatting.local": "github.com/will-wow/larkdown"
   },
   "cSpell.words": [
-		"gmast",
-		"goldmark",
-		"larkdown",
-		"unmarshal",
-		"unmarshaled",
-		"unmarshaler",
-		"unmarshalers",
-		"unmarshaling",
-		"unmarshals"
-	]
+    "gmast",
+    "goldmark",
+    "larkdown",
+    "unmarshal",
+    "unmarshaled",
+    "unmarshaler",
+    "unmarshalers",
+    "unmarshaling",
+    "unmarshals"
+  ]
 }
