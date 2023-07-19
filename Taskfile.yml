@@ -1,0 +1,31 @@
+version: "3"
+
+tasks:
+  test:
+    cmds:
+      - go test -v ./...
+
+  lint:
+    deps: [lint-prettier, lint-go]
+
+  lint-prettier:
+    cmds:
+      - npx prettier --check .
+
+  lint-go:
+    cmds:
+      - go run github.com/golangci/golangci-lint/cmd/golangci-lint@v1.53.3 run
+
+  fmt:
+    deps: [fmt-go, fmt-prettier]
+
+  fmt-go:
+    cmds:
+      - go run golang.org/x/tools/cmd/goimports@v0.11.0 -w -local github.com/will-wow/larkdown .
+
+  fmt-prettier:
+    cmds:
+      - npx prettier --write .
+
+  ready:
+    deps: [fmt, lint, test]
