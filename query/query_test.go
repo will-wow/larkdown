@@ -8,7 +8,6 @@ import (
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/text"
 
-	"github.com/will-wow/larkdown/extension"
 	"github.com/will-wow/larkdown/match"
 	"github.com/will-wow/larkdown/query"
 )
@@ -19,9 +18,7 @@ func TestQueryTree(t *testing.T) {
 		source, err := os.ReadFile("../examples/simple.md")
 		require.NoError(t, err)
 
-		md := goldmark.New(
-			goldmark.WithExtensions(extension.NewLarkdownExtension()),
-		)
+		md := goldmark.New()
 		tree := md.Parser().Parse(text.NewReader(source))
 
 		matcher := []match.Node{
@@ -43,11 +40,11 @@ func TestQueryTree(t *testing.T) {
 
 		matcher = []match.Node{
 			match.Branch{Level: 1, Name: []byte("Title")},
-			// Missed a sublevel
+			// There's a heading 2 in between in the MD file
 			match.Branch{Level: 3, Name: []byte("Sub-subheading")},
 		}
 		_, err = query.QueryTree(tree, source, matcher)
-		require.ErrorContains(t, err, "failed to match query: document[# Title] did not have a [### Sub-subheading]")
+		require.NoError(t, err)
 
 		matcher = []match.Node{
 			match.Branch{Level: 1, Name: []byte("Title")},

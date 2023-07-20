@@ -3,48 +3,12 @@
 package query
 
 import (
-	"bytes"
 	"fmt"
 
 	"github.com/yuin/goldmark/ast"
 
 	"github.com/will-wow/larkdown/match"
 )
-
-// Error returned when a query fails to match.
-// Includes the list of matches that were found, and the match that failed.
-// Prints an error message that can be used to debug the query.
-type QueryError struct {
-	Matches     []match.Node
-	FailedMatch match.Node
-}
-
-func newQueryError(matcherLength int) *QueryError {
-	return &QueryError{
-		Matches:     make([]match.Node, 0, matcherLength),
-		FailedMatch: nil,
-	}
-}
-
-func (e *QueryError) addMatch(node match.Node) {
-	e.Matches = append(e.Matches, node)
-}
-
-func (e *QueryError) addFailedMatch(node match.Node) {
-	e.FailedMatch = node
-}
-
-func (e *QueryError) Error() string {
-	var matches bytes.Buffer
-
-	matches.WriteString("document")
-
-	for _, match := range e.Matches {
-		matches.WriteString(match.String())
-	}
-
-	return fmt.Sprintf("failed to match query: %s did not have a %s", matches.String(), e.FailedMatch)
-}
 
 // Apply a matcher to a tree, and return the matching node for unmarshaling.
 func QueryTree(doc ast.Node, source []byte, matcher []match.Node) (found ast.Node, err error) {
@@ -54,15 +18,20 @@ func QueryTree(doc ast.Node, source []byte, matcher []match.Node) (found ast.Nod
 		return nil, fmt.Errorf("no queries provided")
 	}
 
+	// Tracks how far we are in looping through the queries
 	activeQueryIndex := 0
+	// Tracks how many nodes have been processed since the last query match. This allows for index queries.
 	queryChildIndex := 0
+	// Tracks the active branch/heading query.
+	// This is important because headings do not have children, so we need to know the active heading to know
+	// when a new heading of a higher level is encountered, which stops conceptual heading block.
+	var activeBranch match.Node
 
+	// An error message that gathers all the valid matches. Only if the query fails will this be returned.
 	queryError := newQueryError(queryCount)
 
-	// TODO: safety
-	node := doc.FirstChild().FirstChild()
-
-	fmt.Printf("node: %+v\n", node)
+	// Start processing at the first node of the document.
+	node := doc.FirstChild()
 
 	if node == nil {
 		return nil, fmt.Errorf("empty markdown file")
@@ -79,6 +48,12 @@ func QueryTree(doc ast.Node, source []byte, matcher []match.Node) (found ast.Nod
 			break
 		}
 
+		if activeBranch != nil {
+			if activeBranch.EndMatch(node, queryChildIndex, source) {
+				break
+			}
+		}
+
 		match := matcher[activeQueryIndex].Match(node, queryChildIndex, source)
 		if !match {
 			node = getNextNodeToProcess(node)
@@ -88,16 +63,25 @@ func QueryTree(doc ast.Node, source []byte, matcher []match.Node) (found ast.Nod
 
 		queryError.addMatch(matcher[activeQueryIndex])
 
+		if matcher[activeQueryIndex].IsFlatBranch() {
+			activeBranch = matcher[activeQueryIndex]
+		}
+
 		// If we have a query match, then:
 
 		// If we are not at the last query:
 		if (activeQueryIndex) < queryCount-1 {
+			// Either go down a level, or go to the next sibling
+			if matcher[activeQueryIndex].ShouldDrill() {
+				node = node.FirstChild()
+			} else {
+				node = getNextNodeToProcess(node)
+			}
+
 			// go to the next query
 			activeQueryIndex++
 			// Reset the child index so index queries restart at 0
 			queryChildIndex = 0
-			// And make the next child the first child of this element,
-			node = node.FirstChild()
 			continue
 		}
 

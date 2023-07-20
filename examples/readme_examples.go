@@ -7,7 +7,6 @@ import (
 	"github.com/yuin/goldmark/text"
 
 	"github.com/will-wow/larkdown"
-	"github.com/will-wow/larkdown/extension"
 	"github.com/will-wow/larkdown/match"
 )
 
@@ -28,7 +27,7 @@ func ParseFile(filename string) (results []string, err error) {
 	source := []byte(md)
 	// Preprocess the markdown into a tree where headings are branches.
 	md := goldmark.New(
-		goldmark.WithExtensions(extension.NewLarkdownExtension()),
+	// goldmark.WithExtensions(extension.NewLarkdownExtension()),
 	)
 	doc := md.Parser().Parse(text.NewReader(source))
 
@@ -36,7 +35,7 @@ func ParseFile(filename string) (results []string, err error) {
 	matcher := []match.Node{
 		match.Branch{Level: 1},
 		match.Branch{Level: 2, Name: []byte("Ingredients")},
-		match.Index{Index: 1, Node: match.List{}},
+		match.Index{Index: 0, Node: match.List{}},
 	}
 
 	// Set up a NodeUnmarshaler to parse and store the data you want

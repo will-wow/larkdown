@@ -7,14 +7,15 @@ import (
 	"strings"
 
 	"github.com/yuin/goldmark/ast"
-
-	"github.com/will-wow/larkdown/preprocess"
 )
 
 // Interface for a node matcher.
 type Node interface {
 	Match(node ast.Node, index int, source []byte) (ok bool)
+	EndMatch(node ast.Node, index int, source []byte) bool
 	String() string
+	ShouldDrill() bool
+	IsFlatBranch() bool
 }
 
 // Matches a heading by level and name.
@@ -25,7 +26,7 @@ type Branch struct {
 }
 
 func (m Branch) Match(node ast.Node, index int, source []byte) bool {
-	heading, ok := node.(*preprocess.TreeBranch)
+	heading, ok := node.(*ast.Heading)
 	if !ok {
 		return false
 	}
@@ -42,6 +43,23 @@ func (m Branch) Match(node ast.Node, index int, source []byte) bool {
 		return bytes.EqualFold(node.FirstChild().Text(source), m.Name)
 	}
 	return bytes.Equal(node.FirstChild().Text(source), m.Name)
+}
+
+func (m Branch) EndMatch(node ast.Node, index int, source []byte) bool {
+	heading, ok := node.(*ast.Heading)
+	if !ok {
+		return false
+	}
+
+	return heading.Level <= m.Level
+}
+
+func (m Branch) ShouldDrill() bool {
+	return false
+}
+
+func (m Branch) IsFlatBranch() bool {
+	return true
 }
 
 func (m Branch) String() string {
@@ -70,12 +88,23 @@ func (m List) Match(node ast.Node, index int, source []byte) bool {
 	return ok
 }
 
+func (m List) EndMatch(node ast.Node, index int, source []byte) bool {
+	return true
+}
+
+func (m List) ShouldDrill() bool {
+	return true
+}
+
+func (m List) IsFlatBranch() bool {
+	return false
+}
+
 func (m List) String() string {
 	return ".list"
 }
 
 // Wraps another query, only when it's the nth child of the parent.
-// Note that for branches, the heading itself is the 0th child.
 type Index struct {
 	Index int
 	Node  Node
@@ -96,6 +125,18 @@ func (m Index) Match(node ast.Node, index int, source []byte) bool {
 	return m.Node.Match(node, index, source)
 }
 
+func (m Index) EndMatch(node ast.Node, index int, source []byte) bool {
+	return m.Node.EndMatch(node, index, source)
+}
+
+func (m Index) ShouldDrill() bool {
+	return m.Node.ShouldDrill()
+}
+
+func (m Index) IsFlatBranch() bool {
+	return m.Node.IsFlatBranch()
+}
+
 func (m Index) String() string {
 	return fmt.Sprintf("[%d]%s", m.Index, m.Node.String())
 }
@@ -113,4 +154,16 @@ func (m AnyNode) Match(node ast.Node, index int, source []byte) bool {
 
 func (m AnyNode) String() string {
 	return ".any"
+}
+
+func (m AnyNode) EndMatch(node ast.Node, index int, source []byte) bool {
+	return false
+}
+
+func (m AnyNode) ShouldDrill() bool {
+	return true
+}
+
+func (m AnyNode) IsFlatBranch() bool {
+	return false
 }
