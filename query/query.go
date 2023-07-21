@@ -96,10 +96,6 @@ func QueryTree(doc ast.Node, source []byte, matcher []match.Node) (found ast.Nod
 	return nil, queryError
 }
 
-// func matchesForError(matches []match.Node) string {
-// 	return fmt.Sprintf("matches: %+v", matches)
-// }
-
 func getNextParentSiblingToProcess(node ast.Node) ast.Node {
 	if node == nil {
 		return nil

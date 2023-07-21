@@ -1,4 +1,4 @@
-// Package match provides a query language for matching nodes in a larkdown.Tree
+// match provides a query language for matching nodes in a larkdown.Tree
 package match
 
 import (
@@ -139,6 +139,34 @@ func (m Index) IsFlatBranch() bool {
 
 func (m Index) String() string {
 	return fmt.Sprintf("[%d]%s", m.Index, m.Node.String())
+}
+
+type SearchFor struct {
+	Node Node
+}
+
+func NewSearchFor() *SearchFor {
+	return &SearchFor{}
+}
+
+func (m SearchFor) Match(node ast.Node, index int, source []byte) bool {
+	return true
+}
+
+func (m SearchFor) String() string {
+	return ".searchFor"
+}
+
+func (m SearchFor) EndMatch(node ast.Node, index int, source []byte) bool {
+	return false
+}
+
+func (m SearchFor) ShouldDrill() bool {
+	return true
+}
+
+func (m SearchFor) IsFlatBranch() bool {
+	return false
 }
 
 // Matches any node. Useful as a fallback for index matches.

@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/text"
+	"go.abhg.dev/goldmark/hashtag"
 
 	"github.com/will-wow/larkdown/match"
 	"github.com/will-wow/larkdown/query"
@@ -18,7 +19,14 @@ func TestQueryTree(t *testing.T) {
 		source, err := os.ReadFile("../examples/simple.md")
 		require.NoError(t, err)
 
-		md := goldmark.New()
+		md := goldmark.New(
+			goldmark.WithExtensions(
+				&hashtag.Extender{
+					// Resolver: hashtagResolver,
+					Variant: hashtag.ObsidianVariant,
+				},
+			),
+		)
 		tree := md.Parser().Parse(text.NewReader(source))
 
 		matcher := []match.Node{
