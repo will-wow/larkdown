@@ -15,7 +15,6 @@ import (
 
 func TestQueryTree(t *testing.T) {
 	t.Run("Match error messages", func(t *testing.T) {
-
 		source, err := os.ReadFile("../examples/simple.md")
 		require.NoError(t, err)
 
@@ -69,7 +68,7 @@ func TestQueryTree(t *testing.T) {
 			match.Branch{Level: 2, Name: []byte("Subheading")},
 			match.List{},
 			// Bad index
-			match.NewIndex(4, match.NewAnyNode()),
+			match.Index{Index: 4, Node: match.AnyNode{}},
 		}
 		_, err = query.QueryTree(tree, source, matcher)
 		require.ErrorContains(t, err, "failed to match query: document[# Title][## Subheading].list did not have a [4].any")

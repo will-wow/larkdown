@@ -4,39 +4,33 @@ import (
 	"fmt"
 
 	"github.com/yuin/goldmark/ast"
+	"go.abhg.dev/goldmark/hashtag"
 
 	"github.com/will-wow/larkdown/gmast"
 )
 
-// Implement this interface to unmarshal a goldmark AST node.
-type NodeUnmarshaler interface {
-	UnmarshalNode(node ast.Node, source []byte) error
-}
-
-// Unmarshals a goldmark List node's items into a slice of strings.
-type StringList struct {
-	Items []string
-}
-
-func (u *StringList) UnmarshalNode(node ast.Node, source []byte) error {
+func DecodeListItems(node ast.Node, source []byte) (out []string, err error) {
 	list, ok := node.(*ast.List)
 	if !ok {
-		return fmt.Errorf("expected list node")
+		return out, fmt.Errorf("expected list node")
 	}
 
 	gmast.ForEachListItem(list, source, func(item ast.Node, _ int) {
-		u.Items = append(u.Items, string(item.Text(source)))
+		out = append(out, string(item.Text(source)))
 	})
 
-	return nil
+	return out, nil
 }
 
-// Unmarshals any goldmark node's text into a string.
-type NodeText struct {
-	Text string
+func DecodeText(node ast.Node, source []byte) (string, error) {
+	return string(node.Text(source)), nil
 }
 
-func (u *NodeText) UnmarshalNode(node ast.Node, source []byte) error {
-	u.Text = string(node.Text(source))
-	return nil
+func DecodeTag(node ast.Node, source []byte) (string, error) {
+	tag, ok := node.(*hashtag.Node)
+	if !ok {
+		return "", fmt.Errorf("expected hashtag node, got %s", node.Text(source))
+	}
+
+	return string(tag.Tag), nil
 }

@@ -67,6 +67,9 @@ package examples
 import (
 	"fmt"
 
+	"github.com/yuin/goldmark"
+	"github.com/yuin/goldmark/text"
+
 	"github.com/will-wow/larkdown"
 	"github.com/will-wow/larkdown/match"
 )
@@ -85,11 +88,12 @@ Here's a long story about making dinner.
 `
 
 func ParseFile(filename string) (results []string, err error) {
+	source := []byte(md)
 	// Preprocess the markdown into a tree where headings are branches.
-	tree, err := larkdown.MarkdownToTree([]byte(md))
-	if err != nil {
-		return results, fmt.Errorf("couldn't parse markdown: %w", err)
-	}
+	md := goldmark.New(
+	// goldmark.WithExtensions(extension.NewLarkdownExtension()),
+	)
+	doc := md.Parser().Parse(text.NewReader(source))
 
 	// Set up a matcher for find your data in the tree.
 	matcher := []match.Node{
@@ -99,23 +103,26 @@ func ParseFile(filename string) (results []string, err error) {
 	}
 
 	// Set up a NodeUnmarshaler to parse and store the data you want
-	list := &larkdown.StringList{}
-	err = larkdown.Unmarshal(tree, matcher, list)
+	list, err := larkdown.Find(doc, source, matcher, larkdown.DecodeListItems)
 	if err != nil {
 		return results, fmt.Errorf("couldn't find an ingredients list: %w", err)
 	}
 
 	// Returns []string{"Chicken", "Vegetables", "Salt", "Pepper"}
-	return list.Items, nil
+	return list, nil
 }
+
 ```
 
 ## Roadmap
 
 - [x] basic querying and unmarshaling of headings, lists, and text
-- [ ] make sure this works with extracting front matter
-- [ ] make sure this doesn't interfere with rendering the markdown to HTML with goldmark (possibly by wrapping nodes)
-- [ ] matchers/unmarshalers for more nodes like codeblocks by language
+- [x] make sure this works with extracting front matter
+- [x] make sure this doesn't interfere with rendering the markdown to HTML with goldmark 
+- [x] tag matchers/decoders
+- [x] handle finding multiple matches
+- [ ] system for wrapping a set of matchers into one, for things like "give me the first line of every list under this header"
+- [ ] matchers/decoders for more nodes like codeblocks by language
 - [ ] nth instance matcher for queries like "the second list"
 - [ ] string-based query syntax, ie. `"['# heading']['## heading2'].list[1]"`
 - [ ] generic unmarshaler into json

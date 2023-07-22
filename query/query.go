@@ -7,6 +7,7 @@ import (
 
 	"github.com/yuin/goldmark/ast"
 
+	"github.com/will-wow/larkdown/gmast"
 	"github.com/will-wow/larkdown/match"
 )
 
@@ -49,22 +50,24 @@ func QueryTree(doc ast.Node, source []byte, matcher []match.Node) (found ast.Nod
 		}
 
 		if activeBranch != nil {
-			if activeBranch.EndMatch(node, queryChildIndex, source) {
+			if activeBranch.EndMatch(node) {
 				break
 			}
 		}
 
-		match := matcher[activeQueryIndex].Match(node, queryChildIndex, source)
+		matcher := matcher[activeQueryIndex]
+
+		match := matcher.Match(node, queryChildIndex, source)
 		if !match {
-			node = getNextNodeToProcess(node)
+			node = gmast.GetNextSibling(node)
 			queryChildIndex++
 			continue
 		}
 
-		queryError.addMatch(matcher[activeQueryIndex])
+		queryError.addMatch(matcher)
 
-		if matcher[activeQueryIndex].IsFlatBranch() {
-			activeBranch = matcher[activeQueryIndex]
+		if matcher.IsFlatBranch() {
+			activeBranch = matcher
 		}
 
 		// If we have a query match, then:
@@ -72,11 +75,7 @@ func QueryTree(doc ast.Node, source []byte, matcher []match.Node) (found ast.Nod
 		// If we are not at the last query:
 		if (activeQueryIndex) < queryCount-1 {
 			// Either go down a level, or go to the next sibling
-			if matcher[activeQueryIndex].ShouldDrill() {
-				node = node.FirstChild()
-			} else {
-				node = getNextNodeToProcess(node)
-			}
+			node = matcher.NextNode(node)
 
 			// go to the next query
 			activeQueryIndex++
@@ -94,38 +93,4 @@ func QueryTree(doc ast.Node, source []byte, matcher []match.Node) (found ast.Nod
 
 	// Return the error with the list of good matches and the bad match
 	return nil, queryError
-}
-
-func getNextParentSiblingToProcess(node ast.Node) ast.Node {
-	if node == nil {
-		return nil
-	}
-
-	parent := node.Parent()
-	for {
-		if parent == nil {
-			return nil
-		}
-
-		next := parent.NextSibling()
-		if next != nil {
-			return next
-		}
-
-		parent = parent.Parent()
-	}
-
-}
-
-func getNextNodeToProcess(node ast.Node) ast.Node {
-	if node == nil {
-		return nil
-	}
-
-	next := node.NextSibling()
-	if next != nil {
-		return next
-	}
-
-	return getNextParentSiblingToProcess(node.Parent())
 }
