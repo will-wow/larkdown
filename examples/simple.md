@@ -4,6 +4,8 @@ Big stuff
 
 ## Subheading
 
+#tag1 #tag2 #tag3
+
 Medium stuff
 
 - list of

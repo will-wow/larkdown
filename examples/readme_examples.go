@@ -39,12 +39,11 @@ func ParseFile(filename string) (results []string, err error) {
 	}
 
 	// Set up a NodeUnmarshaler to parse and store the data you want
-	list := &larkdown.StringList{}
-	err = larkdown.Unmarshal(doc, source, matcher, list)
+	list, err := larkdown.Find(doc, source, matcher, larkdown.DecodeListItems)
 	if err != nil {
 		return results, fmt.Errorf("couldn't find an ingredients list: %w", err)
 	}
 
 	// Returns []string{"Chicken", "Vegetables", "Salt", "Pepper"}
-	return list.Items, nil
+	return list, nil
 }
