@@ -57,6 +57,8 @@ func QueryTree(doc ast.Node, source []byte, matcher []match.Node) (found ast.Nod
 
 		matcher := matcher[activeQueryIndex]
 
+		fmt.Println("Matching", matcher.String(), "against", node.Kind().String(), "text", string(node.Text(source)))
+
 		match := matcher.Match(node, queryChildIndex, source)
 		if !match {
 			node = gmast.GetNextSibling(node)

@@ -176,6 +176,23 @@ func (m Index) String() string {
 	return fmt.Sprintf("[%d]%s", m.Index, m.Node.String())
 }
 
+// Matches against a specific node kind.
+// Used for matching arbitrary nodes, including custom ones.
+type NodeOfKind struct {
+	BaseNode
+	Kind ast.NodeKind
+}
+
+var _ Node = NodeOfKind{}
+
+func (m NodeOfKind) Match(node ast.Node, index int, source []byte) bool {
+	return node.Kind() == m.Kind
+}
+
+func (m NodeOfKind) String() string {
+	return fmt.Sprintf("[kind:%s]", m.Kind.String())
+}
+
 // Matches any node. Useful as a fallback for index matches.
 type AnyNode struct {
 	BaseNode

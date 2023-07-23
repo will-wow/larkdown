@@ -9,6 +9,7 @@ import (
 	"github.com/will-wow/larkdown/gmast"
 )
 
+// Decode an ast.List into a slice of strings for each item
 func DecodeListItems(node ast.Node, source []byte) (out []string, err error) {
 	list, ok := node.(*ast.List)
 	if !ok {
@@ -22,10 +23,13 @@ func DecodeListItems(node ast.Node, source []byte) (out []string, err error) {
 	return out, nil
 }
 
+// Decode all the text inside any node
 func DecodeText(node ast.Node, source []byte) (string, error) {
 	return string(node.Text(source)), nil
 }
 
+// Decode a #tag parsed by go.abhg.dev/goldmark/hashtag into a string.
+// Only the text content of the tag is returned, not the # prefix.
 func DecodeTag(node ast.Node, source []byte) (string, error) {
 	tag, ok := node.(*hashtag.Node)
 	if !ok {

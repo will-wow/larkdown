@@ -2,30 +2,41 @@ version: "3"
 
 tasks:
   test:
+    desc: Run test suite
     cmds:
-      - go test ./...
+      - go test {{.CLI_ARGS}} ./...
 
   lint:
+    desc: Run linters
     deps: [lint-prettier, lint-go]
 
   lint-prettier:
+    desc: Check if prettier has been run
     cmds:
       - npx prettier --check .
 
   lint-go:
+    desc: Run golangci-lint
     cmds:
       - go run github.com/golangci/golangci-lint/cmd/golangci-lint@v1.53.3 run
 
   fmt:
+    desc: Run all formatters
     deps: [fmt-go, fmt-prettier]
 
   fmt-go:
+    desc: Run goimports
     cmds:
       - go run golang.org/x/tools/cmd/goimports@v0.11.0 -w -local github.com/will-wow/larkdown .
 
   fmt-prettier:
+    desc: Run prettier on non-go files
     cmds:
       - npx prettier --write .
 
   ready:
-    deps: [fmt, lint, test]
+    desc: Format, lint, and test code. If this passes, then the code is ready to be committed.
+    cmds:
+      - task: fmt
+      - task: lint
+      - task: test

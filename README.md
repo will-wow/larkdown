@@ -118,10 +118,13 @@ func ParseFile(filename string) (results []string, err error) {
 
 - [x] basic querying and unmarshaling of headings, lists, and text
 - [x] make sure this works with extracting front matter
-- [x] make sure this doesn't interfere with rendering the markdown to HTML with goldmark 
+- [x] make sure this doesn't interfere with rendering the markdown to HTML with goldmark
 - [x] tag matchers/decoders
 - [x] handle finding multiple matches
-- [ ] system for wrapping a set of matchers into one, for things like "give me the first line of every list under this header"
+- [x] generic matcher for any goldmark kind
+- [ ] options for recording extra debugging data for failed matches
+- [ ] handle decoding a table into a slice of structs
+- [ ] system for wrapping a set of matchers into one, for things like "give me the first line of every list under this subheader"
 - [ ] matchers/decoders for more nodes like codeblocks by language
 - [ ] nth instance matcher for queries like "the second list"
 - [ ] string-based query syntax, ie. `"['# heading']['## heading2'].list[1]"`
