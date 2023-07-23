@@ -2,7 +2,7 @@
 
 Lock down your markdown.
 
-This package allows you to treat markdown files as a tree where headings are branches, and then extract data from that trees.
+Larkdown allows you to treat markdown files as a tree where headings are branches, to extract data from that tree.
 
 It lets you treat this:
 
@@ -47,9 +47,9 @@ like this
 }
 ```
 
-and then query that data structure to find a node, and unmarshal that node into useful data like strings nad slices of strings.
+and then query that data structure to find a node, and decode that node into useful data like strings and slices of strings.
 
-`larkdown` makes heavy use of the excellent [goldmark](https://github.com/yuin/goldmark) library for parsing [Commonmark](https://commonmark.org) markdown into a structure that is easy to work with.
+Specially `larkdown` takes an AST generated from the excellent [goldmark](https://github.com/yuin/goldmark) library for parsing [Commonmark](https://commonmark.org) markdown, and lest you query that AST. This makes it easy to take a markdown file, run it through Goldmark, query some structured data, and then finish using Goldmark to render the file to HTML.
 
 ## Motivation
 
@@ -87,7 +87,7 @@ Here's a long story about making dinner.
 - Pepper
 `
 
-func ParseFile(filename string) (results []string, err error) {
+func ParseFile() (results []string, err error) {
 	source := []byte(md)
 	// Preprocess the markdown into a tree where headings are branches.
 	md := goldmark.New(
@@ -151,6 +151,14 @@ sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d
 ```
 
 Or follow the [installation instructions](https://taskfile.dev/installation/) for more options.
+
+### List commands
+
+For a list of all commands for this project, run
+
+```bash
+task --list
+```
 
 ### Format
 

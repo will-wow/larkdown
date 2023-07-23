@@ -23,7 +23,7 @@ Here's a long story about making dinner.
 - Pepper
 `
 
-func ParseFile(filename string) (results []string, err error) {
+func ParseFile() (results []string, err error) {
 	source := []byte(md)
 	// Preprocess the markdown into a tree where headings are branches.
 	md := goldmark.New(
