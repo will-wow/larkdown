@@ -27,6 +27,7 @@ tasks:
   fmt-go:
     desc: Run goimports
     cmds:
+      - go mod tidy
       - go run golang.org/x/tools/cmd/goimports@v0.11.0 -w -local github.com/will-wow/larkdown .
 
   fmt-prettier:
