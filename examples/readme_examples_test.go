@@ -9,10 +9,12 @@ import (
 )
 
 func TestReadme(t *testing.T) {
-	t.Run("ParseFile works", func(t *testing.T) {
-		list, err := examples.ParseFile()
+	t.Run("ParseRecipe works", func(t *testing.T) {
+		recipe, err := examples.ParseRecipe()
 		require.NoError(t, err)
 
-		require.Equal(t, []string{"Chicken", "Vegetables", "Salt", "Pepper"}, list)
+		require.Equal(t, []string{"Chicken", "Vegetables", "Salt", "Pepper"}, recipe.Ingredients)
+		require.Equal(t, []string{"dinner", "chicken"}, recipe.Tags)
+		require.Contains(t, recipe.Html.String(), "Here's a long story about making dinner.")
 	})
 }

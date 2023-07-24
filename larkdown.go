@@ -7,9 +7,14 @@ import (
 	"github.com/will-wow/larkdown/query"
 )
 
-// Use a matcher to find a node, and then unmarshal its contents into structured data.
-func Find[T any](doc ast.Node, source []byte, matcher []match.Node, fn func(node ast.Node, source []byte) (T, error)) (out T, err error) {
-	found, err := query.QueryTree(doc, source, matcher)
+// Use a matcher to find a node, and then decode its contents and return structured data.
+func Find[T any](
+	doc ast.Node,
+	source []byte,
+	matcher []match.Node,
+	fn func(node ast.Node, source []byte) (T, error),
+) (out T, err error) {
+	found, err := query.QueryOne(doc, source, matcher)
 	if err != nil {
 		return out, err
 	}
@@ -17,8 +22,15 @@ func Find[T any](doc ast.Node, source []byte, matcher []match.Node, fn func(node
 	return fn(found, source)
 }
 
-func FindAll[T any](doc ast.Node, source []byte, matcher []match.Node, fn func(node ast.Node, source []byte) (T, error)) (out []T, err error) {
-	found, err := query.QueryAll(doc, source, matcher)
+// Use a matcher to find a all nodes, then decode its contents and return structured data.
+func FindAll[T any](
+	doc ast.Node,
+	source []byte,
+	matcher []match.Node,
+	extractor match.Node,
+	fn func(node ast.Node, source []byte) (T, error),
+) (out []T, err error) {
+	found, err := query.QueryAll(doc, source, matcher, extractor)
 	if err != nil {
 		return
 	}

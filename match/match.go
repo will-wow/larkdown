@@ -8,8 +8,6 @@ import (
 
 	"github.com/yuin/goldmark/ast"
 	"go.abhg.dev/goldmark/hashtag"
-
-	"github.com/will-wow/larkdown/gmast"
 )
 
 // Interface for a node matcher.
@@ -85,7 +83,7 @@ func (m Branch) EndMatch(node ast.Node) bool {
 
 // For headings, the next node is the next sibling.
 func (m Branch) NextNode(self ast.Node) ast.Node {
-	return gmast.GetNextSibling(self)
+	return self.NextSibling()
 }
 
 // Headings are branches whose children are siblings until the next heading.

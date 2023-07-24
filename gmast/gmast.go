@@ -44,41 +44,6 @@ func WalkSiblingsUntil(node ast.Node, walker ast.Walker) error {
 	}
 }
 
-// Get the next sibling, or the next ancestor's sibling.
-func GetNextSibling(node ast.Node) ast.Node {
-	if node == nil {
-		return nil
-	}
-
-	next := node.NextSibling()
-	if next != nil {
-		return next
-	}
-
-	return getNextParentSiblingToProcess(node.Parent())
-}
-
-// Walk up the tree until we find a parent with a sibling to process.
-func getNextParentSiblingToProcess(node ast.Node) ast.Node {
-	if node == nil {
-		return nil
-	}
-
-	parent := node.Parent()
-	for {
-		if parent == nil {
-			return nil
-		}
-
-		next := parent.NextSibling()
-		if next != nil {
-			return next
-		}
-
-		parent = parent.Parent()
-	}
-}
-
 // Copied from goldmark's ast.walkHelper
 func walkHelper(n ast.Node, walker ast.Walker) (ast.WalkStatus, error) {
 	status, err := walker(n, true)

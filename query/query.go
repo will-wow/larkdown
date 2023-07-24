@@ -7,13 +7,12 @@ import (
 
 	"github.com/yuin/goldmark/ast"
 
-	"github.com/will-wow/larkdown/gmast"
 	"github.com/will-wow/larkdown/match"
 )
 
 // Apply a matcher to a tree, and return the matching node for unmarshaling.
-func QueryTree(doc ast.Node, source []byte, matcher []match.Node) (found ast.Node, err error) {
-	queryCount := len(matcher)
+func QueryOne(doc ast.Node, source []byte, query []match.Node) (found ast.Node, err error) {
+	queryCount := len(query)
 
 	if queryCount == 0 {
 		return nil, fmt.Errorf("no queries provided")
@@ -55,13 +54,11 @@ func QueryTree(doc ast.Node, source []byte, matcher []match.Node) (found ast.Nod
 			}
 		}
 
-		matcher := matcher[activeQueryIndex]
-
-		fmt.Println("Matching", matcher.String(), "against", node.Kind().String(), "text", string(node.Text(source)))
+		matcher := query[activeQueryIndex]
 
 		match := matcher.Match(node, queryChildIndex, source)
 		if !match {
-			node = gmast.GetNextSibling(node)
+			node = node.NextSibling()
 			queryChildIndex++
 			continue
 		}
@@ -91,7 +88,7 @@ func QueryTree(doc ast.Node, source []byte, matcher []match.Node) (found ast.Nod
 	}
 
 	// Add the last failed match the error
-	queryError.addFailedMatch(matcher[activeQueryIndex])
+	queryError.addFailedMatch(query[activeQueryIndex])
 
 	// Return the error with the list of good matches and the bad match
 	return nil, queryError

@@ -65,10 +65,12 @@ go get github.com/will-wow/larkdown
 package examples
 
 import (
+	"bytes"
 	"fmt"
 
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/text"
+	"go.abhg.dev/goldmark/hashtag"
 
 	"github.com/will-wow/larkdown"
 	"github.com/will-wow/larkdown/match"
@@ -79,6 +81,10 @@ var md = `
 
 Here's a long story about making dinner.
 
+## Tags
+
+#dinner #chicken
+
 ## Ingredients
 
 - Chicken
@@ -87,31 +93,66 @@ Here's a long story about making dinner.
 - Pepper
 `
 
-func ParseFile() (results []string, err error) {
+type Recipe struct {
+	Tags        []string
+	Ingredients []string
+	Html        bytes.Buffer
+}
+
+func ParseRecipe() (recipe Recipe, err error) {
 	source := []byte(md)
-	// Preprocess the markdown into a tree where headings are branches.
+	// Preprocess the markdown into goldmark AST
 	md := goldmark.New(
-	// goldmark.WithExtensions(extension.NewLarkdownExtension()),
+		// Parse hashtags to they can be matched against.
+		goldmark.WithExtensions(
+			&hashtag.Extender{Variant: hashtag.ObsidianVariant},
+		),
 	)
 	doc := md.Parser().Parse(text.NewReader(source))
 
-	// Set up a matcher for find your data in the tree.
-	matcher := []match.Node{
+	// ====
+	// Get the ingredients from the list
+	// ====
+
+	// Set up a ingredientsQuery for the first list under ## Ingredients
+	ingredientsQuery := []match.Node{
 		match.Branch{Level: 1},
 		match.Branch{Level: 2, Name: []byte("Ingredients")},
 		match.Index{Index: 0, Node: match.List{}},
 	}
 
-	// Set up a NodeUnmarshaler to parse and store the data you want
-	list, err := larkdown.Find(doc, source, matcher, larkdown.DecodeListItems)
+	// Decode the list items into a slice of strings
+	ingredients, err := larkdown.Find(doc, source, ingredientsQuery, larkdown.DecodeListItems)
 	if err != nil {
-		return results, fmt.Errorf("couldn't find an ingredients list: %w", err)
+		return recipe, fmt.Errorf("couldn't find an ingredients list: %w", err)
+	}
+	recipe.Ingredients = ingredients
+
+	// ====
+	// Get the tags from the file
+	// ====
+
+	// Matcher for the tags header
+	tagsQuery := []match.Node{
+		match.Branch{Level: 2, Name: []byte("Tags")},
 	}
 
-	// Returns []string{"Chicken", "Vegetables", "Salt", "Pepper"}
-	return list, nil
-}
+	// Find all Tags under the tags header, and decode their contents into strings.
+	tags, err := larkdown.FindAll(doc, source, tagsQuery, match.Tag{}, larkdown.DecodeTag)
+	if err != nil {
+		// This will not return an error if there are no tags, only if something else went wrong.
+		return recipe, fmt.Errorf("error finding tags: %w", err)
+	}
+	recipe.Tags = tags
 
+	// ====
+	// Render the HTML
+	// ====
+	md.Convert(source, &recipe.Html)
+
+	// Return all recipe data
+	return recipe, nil
+}
 ```
 
 ## Roadmap
@@ -123,13 +164,19 @@ func ParseFile() (results []string, err error) {
 - [x] handle finding multiple matches
 - [x] generic matcher for any goldmark kind
 - [ ] options for recording extra debugging data for failed matches
+- [ ] use options to support not setting a matcher or decoder
 - [ ] handle decoding a table into a slice of structs
-- [ ] system for wrapping a set of matchers into one, for things like "give me the first line of every list under this subheader"
-- [ ] matchers/decoders for more nodes like codeblocks by language
+- [ ] handle a list of matchers for FindAll extractors
+- [ ] matchers/decoders for more nodes:
+  - [ ] codeblocks by language
+  - [ ] tables with structured output
+- [ ] add an "end on" option for branches, to end on the next subheading of a specific level
 - [ ] nth instance matcher for queries like "the second list"
+- [ ] query validator to make sure it even makes sense
 - [ ] string-based query syntax, ie. `"['# heading']['## heading2'].list[1]"`
 - [ ] generic unmarshaler into json
-- [ ] cli for string-based queries and json return values
+- [ ] cli for string-based queries
+- [x] benchmark
 - [ ] more docs and tests
 
 ## Alternatives
