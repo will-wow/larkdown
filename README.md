@@ -249,3 +249,9 @@ task test
 # runs fmt lint test
 task ready
 ```
+
+### Publish
+
+```bash
+VERSION=0.0.N task publish
+```

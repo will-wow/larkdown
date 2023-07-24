@@ -12,6 +12,11 @@ tasks:
       - go test -coverpkg ./... -coverprofile=coverage.txt ./...
       - go tool cover -html=coverage.txt
 
+  doc:
+    desc: Serve godoc
+    cmds:
+      - go run golang.org/x/tools/cmd/godoc@latest -http=:6060 
+
   lint:
     desc: Run linters
     deps: [lint-prettier, lint-go]
@@ -25,6 +30,13 @@ tasks:
     desc: Run golangci-lint
     cmds:
       - go run github.com/golangci/golangci-lint/cmd/golangci-lint@v1.53.3 run
+
+  publish:
+    desc: Publish a version
+    cmds:
+      - git tag -a v{{.Version}} -m "Release v{{.Version}}"
+      - git push origin v{{.Version}}
+      - GOPROXY=proxy.golang.org go list -m github.com/will-wow/larkdown@v{{.Version}}
 
   fmt:
     desc: Run all formatters
