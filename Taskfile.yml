@@ -15,7 +15,7 @@ tasks:
   doc:
     desc: Serve godoc
     cmds:
-      - go run golang.org/x/tools/cmd/godoc@latest -http=:6060 
+      - go run golang.org/x/tools/cmd/godoc@latest -http=:6060
 
   lint:
     desc: Run linters

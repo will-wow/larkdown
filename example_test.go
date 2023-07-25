@@ -86,7 +86,10 @@ func Example() {
 	// ====
 	// Render the HTML
 	// ====
-	md.Convert(source, &recipe.Html)
+	err = md.Convert(source, &recipe.Html)
+	if err != nil {
+		panic(fmt.Errorf("error rendering HTML: %w", err))
+	}
 
 	fmt.Println(recipe.Ingredients)
 	fmt.Println(recipe.Tags)

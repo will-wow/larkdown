@@ -29,7 +29,7 @@ Here's a long story about making dinner.
 `
 
 func ExampleFindAll() {
-	source := []byte(findMarkdown)
+	source := []byte(findAllMarkdown)
 	// Preprocess the markdown into goldmark AST
 	md := goldmark.New(
 		// Parse hashtags to they can be matched against.
