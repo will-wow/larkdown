@@ -1,6 +1,6 @@
 # Heading 1
 
-Paragraph is *here*
+Paragraph is _here_
 and **here** as well
 
 #tag #tag2 #tag3

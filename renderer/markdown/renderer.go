@@ -138,7 +138,7 @@ func (r *Renderer) renderBlockquote(w util.BufWriter, source []byte, n ast.Node,
 				// Write the line with a > prefix
 				line := c.Lines().At(i)
 				_, _ = w.WriteString("> ")
-				w.Write(line.Value(source))
+				_, _ = w.Write(line.Value(source))
 			}
 
 			if c.NextSibling() != nil {
@@ -291,7 +291,7 @@ func (r *Renderer) renderCodeSpan(w util.BufWriter, source []byte, n ast.Node, e
 
 func (r *Renderer) renderEmphasis(w util.BufWriter, source []byte, node ast.Node, entering bool) (ast.WalkStatus, error) {
 	n, _ := node.(*ast.Emphasis)
-	tag := "*"
+	tag := "_"
 	// TODO: Handle nested emphasis
 	if n.Level == 2 {
 		tag = "**"
@@ -330,7 +330,7 @@ func (r *Renderer) renderImage(w util.BufWriter, source []byte, node ast.Node, e
 	if n.Title != nil {
 		// If there's a title, write it in quotes.
 		_, _ = w.WriteString(` "`)
-		w.Write(n.Title)
+		_, _ = w.Write(n.Title)
 		_ = w.WriteByte('"')
 	}
 	_ = w.WriteByte(')')
