@@ -4,6 +4,7 @@ import (
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/renderer"
 	"github.com/yuin/goldmark/util"
+	"go.abhg.dev/goldmark/hashtag"
 )
 
 // A Config struct has configurations for the HTML based renderers.
@@ -98,6 +99,7 @@ func (r *Renderer) RegisterFuncs(reg renderer.NodeRendererFuncRegisterer) {
 	reg.Register(ast.KindRawHTML, r.renderRawHTML)
 	reg.Register(ast.KindText, r.renderText)
 	reg.Register(ast.KindString, r.renderString)
+	reg.Register(hashtag.Kind, r.renderHashtag)
 }
 
 func (r *Renderer) writeLines(w util.BufWriter, source []byte, n ast.Node) {
@@ -117,9 +119,9 @@ func (r *Renderer) renderHeading(w util.BufWriter, source []byte, node ast.Node,
 	n, _ := node.(*ast.Heading)
 	if entering {
 		for i := 0; i < n.Level; i++ {
-			_, _ = w.WriteString("#")
+			_ = w.WriteByte('#')
 		}
-		_, _ = w.WriteString(" ")
+		_ = w.WriteByte(' ')
 	} else {
 		_, _ = w.WriteString("\n\n")
 	}
@@ -128,13 +130,30 @@ func (r *Renderer) renderHeading(w util.BufWriter, source []byte, node ast.Node,
 
 func (r *Renderer) renderBlockquote(w util.BufWriter, source []byte, n ast.Node, entering bool) (ast.WalkStatus, error) {
 	if entering {
-		_, _ = w.WriteString("```")
-		// TODO: something like 		r.writeLines(w, source, n)
-		// }
+		// For each paragraph:
+		for c := n.FirstChild(); c != nil; c = c.NextSibling() {
+			// For each line in the paragraph:
+			l := c.Lines().Len()
+			for i := 0; i < l; i++ {
+				// Write the line with a > prefix
+				line := c.Lines().At(i)
+				_, _ = w.WriteString("> ")
+				w.Write(line.Value(source))
+			}
+
+			if c.NextSibling() != nil {
+				// Extra blank > line between paragraphs of a quote
+				_, _ = w.WriteString("\n>\n")
+			} else {
+				_ = w.WriteByte('\n')
+			}
+		}
+
+		return ast.WalkSkipChildren, nil
 	} else {
-		_, _ = w.WriteString("```\n")
+		_ = w.WriteByte('\n')
+		return ast.WalkContinue, nil
 	}
-	return ast.WalkContinue, nil
 }
 
 func (r *Renderer) renderCodeBlock(w util.BufWriter, source []byte, n ast.Node, entering bool) (ast.WalkStatus, error) {
@@ -171,9 +190,12 @@ func (r *Renderer) renderHTMLBlock(w util.BufWriter, source []byte, node ast.Nod
 			line := n.Lines().At(i)
 			r.Writer.Write(w, line.Value(source))
 		}
-	} else if n.HasClosure() {
-		closure := n.ClosureLine
-		r.Writer.Write(w, closure.Value(source))
+	} else {
+		if n.HasClosure() {
+			closure := n.ClosureLine
+			r.Writer.Write(w, closure.Value(source))
+		}
+		_ = w.WriteByte('\n')
 	}
 	return ast.WalkContinue, nil
 }
@@ -260,29 +282,10 @@ func (r *Renderer) renderAutoLink(w util.BufWriter, source []byte, node ast.Node
 }
 
 func (r *Renderer) renderCodeSpan(w util.BufWriter, source []byte, n ast.Node, entering bool) (ast.WalkStatus, error) {
-	// TODO:
+	// TODO: somehow get the number of backticks, which isn't in the AST.
+	// Write a ` on entering and leaving
+	_ = w.WriteByte('`')
 
-	// if entering {
-	// 	if n.Attributes() != nil {
-	// 		_, _ = w.WriteString("<code")
-	// 		RenderAttributes(w, n, CodeAttributeFilter)
-	// 		_ = w.WriteByte('>')
-	// 	} else {
-	// 		_, _ = w.WriteString("<code>")
-	// 	}
-	// 	for c := n.FirstChild(); c != nil; c = c.NextSibling() {
-	// 		segment := c.(*ast.Text).Segment
-	// 		value := segment.Value(source)
-	// 		if bytes.HasSuffix(value, []byte("\n")) {
-	// 			r.Writer.RawWrite(w, value[:len(value)-1])
-	// 			r.Writer.RawWrite(w, []byte(" "))
-	// 		} else {
-	// 			r.Writer.RawWrite(w, value)
-	// 		}
-	// 	}
-	// 	return ast.WalkSkipChildren, nil
-	// }
-	// _, _ = w.WriteString("</code>")
 	return ast.WalkContinue, nil
 }
 
@@ -325,9 +328,10 @@ func (r *Renderer) renderImage(w util.BufWriter, source []byte, node ast.Node, e
 	_, _ = w.Write(n.Destination)
 
 	if n.Title != nil {
-		_ = w.WriteByte(' ')
-		// TODO: Why r.writer?
-		r.Writer.Write(w, n.Title)
+		// If there's a title, write it in quotes.
+		_, _ = w.WriteString(` "`)
+		w.Write(n.Title)
+		_ = w.WriteByte('"')
 	}
 	_ = w.WriteByte(')')
 	return ast.WalkSkipChildren, nil
@@ -371,12 +375,18 @@ func (r *Renderer) renderString(w util.BufWriter, source []byte, node ast.Node, 
 		return ast.WalkContinue, nil
 	}
 	n, _ := node.(*ast.String)
-	// TODO: what's the difference?
-	if n.IsCode() {
-		_, _ = w.Write(n.Value)
-	} else {
-		r.Writer.Write(w, n.Value)
+	_, _ = w.Write(n.Value)
+	return ast.WalkContinue, nil
+}
+
+func (r *Renderer) renderHashtag(w util.BufWriter, source []byte, node ast.Node, entering bool) (ast.WalkStatus, error) {
+	if entering {
+		n, _ := node.(*hashtag.Node)
+		_, _ = w.WriteString("#")
+		_, _ = w.Write(n.Tag)
+		return ast.WalkSkipChildren, nil
 	}
+
 	return ast.WalkContinue, nil
 }
 
