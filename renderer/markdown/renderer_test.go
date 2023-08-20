@@ -13,6 +13,7 @@ import (
 	"github.com/yuin/goldmark/util"
 	"go.abhg.dev/goldmark/hashtag"
 
+	"github.com/will-wow/larkdown/gmast"
 	"github.com/will-wow/larkdown/match"
 	"github.com/will-wow/larkdown/query"
 	"github.com/will-wow/larkdown/renderer/markdown"
@@ -51,19 +52,14 @@ func TestAddingANode(t *testing.T) {
 	_, ok := listNode.(*ast.List)
 	require.True(t, ok, "first list is not a list")
 
-	newText := "Hello, world!"
-	newSegment := text.NewSegment(len(source), len(source)+len(newText))
-	// Add new text on the bottom of source for referencing by the segment
-	source = append(source, newText...)
-	newSegmentNode := ast.NewTextSegment(newSegment)
+	newSegment, source := gmast.NewSegment("Hello, world!", source)
 
-	newTextBlock := ast.NewTextBlock()
-	newTextBlock.AppendChild(newTextBlock, newSegmentNode)
-
-	newListItem := ast.NewListItem(2)
-	newListItem.AppendChild(newListItem, newTextBlock)
-
-	listNode.AppendChild(listNode, newListItem)
+	gmast.AppendChild(listNode,
+		gmast.AppendChild(ast.NewListItem(2),
+			gmast.AppendChild(
+				ast.NewTextBlock(),
+				ast.NewTextSegment(newSegment),
+			)))
 
 	// Render
 	var rendered bytes.Buffer
