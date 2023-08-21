@@ -52,6 +52,10 @@ func ExampleNewRenderer() {
 		panic(fmt.Errorf("error finding tags heading: %w", err))
 	}
 
+	// ====
+	// Edit the AST to add a new tag
+	// ====
+
 	// Create a new tag
 	space, source := gmast.NewSpace(source)
 	hashtag, source := gmast.NewHashtag("testing", source)
@@ -63,7 +67,7 @@ func ExampleNewRenderer() {
 	)
 
 	// ====
-	// Render back to markdown
+	// Use larkdown renderer to render back to markdown
 	// ====
 	var newMarkdown bytes.Buffer
 	err = markdown.NewNodeRenderer().Render(&newMarkdown, source, doc)
