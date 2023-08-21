@@ -8,9 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
-	"github.com/yuin/goldmark/renderer"
 	"github.com/yuin/goldmark/text"
-	"github.com/yuin/goldmark/util"
 	"go.abhg.dev/goldmark/hashtag"
 
 	"github.com/will-wow/larkdown/gmast"
@@ -19,15 +17,36 @@ import (
 	"github.com/will-wow/larkdown/renderer/markdown"
 )
 
-func NewRenderer() renderer.Renderer {
-	return renderer.NewRenderer(renderer.WithNodeRenderers(util.Prioritized(markdown.NewRenderer(), 998)))
-}
-
 func TestSimpleRenderer(t *testing.T) {
 	source, md, doc := setup(t)
 
 	var rendered bytes.Buffer
 	err := md.Renderer().Render(&rendered, source, doc)
+	require.NoError(t, err)
+
+	// Print the ast if the test is going to fail
+	if string(source) != rendered.String() {
+		doc.Dump(source, 3)
+	}
+
+	require.Equal(t, string(source), rendered.String())
+}
+
+func TestStandaloneRenderer(t *testing.T) {
+	source, err := os.ReadFile("../../examples/all-tags.md")
+	require.NoError(t, err, "error reading markdown file")
+
+	md := goldmark.New(
+		goldmark.WithExtensions(
+			&hashtag.Extender{Variant: hashtag.ObsidianVariant},
+		),
+	)
+
+	doc := md.Parser().Parse(text.NewReader(source))
+
+	var rendered bytes.Buffer
+	err = markdown.NewNodeRenderer().Render(&rendered, source, doc)
+
 	require.NoError(t, err)
 
 	// Print the ast if the test is going to fail
@@ -54,6 +73,7 @@ func TestAddingANode(t *testing.T) {
 
 	newSegment, source := gmast.NewSegment("Hello, world!", source)
 
+	// Add a new list item to the first list
 	gmast.AppendChild(listNode,
 		gmast.AppendChild(ast.NewListItem(2),
 			gmast.AppendChild(
@@ -81,7 +101,7 @@ func setup(t *testing.T) (source []byte, md goldmark.Markdown, doc ast.Node) {
 		goldmark.WithExtensions(
 			&hashtag.Extender{Variant: hashtag.ObsidianVariant},
 		),
-		goldmark.WithRenderer(NewRenderer()),
+		goldmark.WithRenderer(markdown.NewNodeRenderer()),
 	)
 
 	doc = md.Parser().Parse(text.NewReader(source))

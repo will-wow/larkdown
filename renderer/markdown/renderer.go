@@ -380,13 +380,7 @@ func (r *Renderer) renderString(w util.BufWriter, source []byte, node ast.Node, 
 }
 
 func (r *Renderer) renderHashtag(w util.BufWriter, source []byte, node ast.Node, entering bool) (ast.WalkStatus, error) {
-	if entering {
-		n, _ := node.(*hashtag.Node)
-		_, _ = w.WriteString("#")
-		_, _ = w.Write(n.Tag)
-		return ast.WalkSkipChildren, nil
-	}
-
+	// No-op, since the child textSegment will have the #tag contents
 	return ast.WalkContinue, nil
 }
 
@@ -411,3 +405,8 @@ func (d *defaultWriter) Write(writer util.BufWriter, source []byte) {
 
 // DefaultWriter is a default instance of the Writer.
 var DefaultWriter = NewWriter()
+
+// NewNodeRenderer returns a new goldmark NodeRenderer with default config that renders nodes as Markdown.
+func NewNodeRenderer(opts ...Option) renderer.Renderer {
+	return renderer.NewRenderer(renderer.WithNodeRenderers(util.Prioritized(NewRenderer(opts...), 998)))
+}

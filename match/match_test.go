@@ -27,3 +27,25 @@ func TestNodeOfKind(t *testing.T) {
 		require.Equal(t, match.Kind(), ast.KindLink)
 	})
 }
+
+func TestHeading(t *testing.T) {
+	t.Run("should match by level", func(t *testing.T) {
+		tree, source := test.TreeFromMd(t, `
+		# Heading 1
+
+		Body
+
+		## Heading 2
+
+		Body2
+		`)
+
+		matcher := []match.Node{
+			match.Heading{Level: 2},
+		}
+
+		match, err := query.QueryOne(tree, source, matcher)
+		require.NoError(t, err)
+		require.Equal(t, "Heading 2", string(match.Text(source)))
+	})
+}

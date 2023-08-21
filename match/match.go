@@ -8,6 +8,8 @@ import (
 
 	"github.com/yuin/goldmark/ast"
 	"go.abhg.dev/goldmark/hashtag"
+
+	"github.com/will-wow/larkdown/gmast"
 )
 
 // Interface for a node matcher.
@@ -25,7 +27,7 @@ type Node interface {
 	IsFlatBranch() bool
 }
 
-// Partially implements Node.
+// BaseNode partially implements Node, for simpler matchers.
 type BaseNode struct{}
 
 func (m BaseNode) EndMatch(node ast.Node) bool {
@@ -38,7 +40,8 @@ func (m BaseNode) IsFlatBranch() bool {
 	return false
 }
 
-// Matches a heading by level and name.
+// Branch matches a heading by level and name, and returns its siblings
+// until the next heading of the same or higher level.
 type Branch struct {
 	// The heading level to match, or 0 to match any level.
 	Level int
@@ -73,12 +76,7 @@ func (m Branch) Match(node ast.Node, index int, source []byte) bool {
 
 // A heading branch ends when the next heading is of the same or higher level.
 func (m Branch) EndMatch(node ast.Node) bool {
-	heading, ok := node.(*ast.Heading)
-	if !ok {
-		return false
-	}
-
-	return heading.Level <= m.Level
+	return gmast.IsHeadingLevelBelow(node, m.Level)
 }
 
 // For headings, the next node is the next sibling.
@@ -107,6 +105,60 @@ func (m Branch) String() string {
 	}
 
 	return fmt.Sprintf("[%s %s]", level, string(m.Name))
+}
+
+// Heading matches a heading by level, to get the title contents directly.
+type Heading struct {
+	BaseNode
+
+	// The heading level to match, or 0 to match any level.
+	Level int
+	// The heading name to match, or empty to match any name.
+	Name []byte
+	// If true, the name is matched case-insensitively.
+	CaseInsensitive bool
+}
+
+var _ Node = Heading{}
+
+// Match matches a heading by level and name.
+func (m Heading) Match(node ast.Node, index int, source []byte) bool {
+	heading, ok := node.(*ast.Heading)
+	if !ok {
+		return false
+	}
+	if m.Level != 0 && heading.Level != m.Level {
+		return false
+	}
+
+	// If the name is empty, we're matching any heading of the given level.
+	if len(m.Name) == 0 {
+		return true
+	}
+
+	if m.CaseInsensitive {
+		return bytes.EqualFold(node.FirstChild().Text(source), m.Name)
+	}
+	return bytes.Equal(node.FirstChild().Text(source), m.Name)
+}
+
+// String prints the heading matcher for debugging.
+func (m Heading) String() string {
+	var level string
+	if m.Level == 0 {
+		// If the level is unspecified, note that.
+		level = "#?"
+	} else {
+		// Otherwise indicate the level with hashes.
+		level = strings.Repeat("#", m.Level)
+	}
+
+	// If the name is empty, we're matching any heading of the given level.
+	if len(m.Name) == 0 {
+		return fmt.Sprintf("[[%s]]", level)
+	}
+
+	return fmt.Sprintf("[[%s %s]]", level, string(m.Name))
 }
 
 // Matches an ordered or unordered list.
