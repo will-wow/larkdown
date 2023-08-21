@@ -2,7 +2,7 @@
 
 Lock down your markdown.
 
-Larkdown allows you to treat markdown files as a tree where headings are branches, to extract data from that tree.
+Larkdown allows you to treat markdown files as a tree where headings are branches, to extract data from that tree, and then either update and render the tree back to markdown, or continue to render to HTML.
 
 It lets you treat this:
 
@@ -47,19 +47,23 @@ like this
 }
 ```
 
-and then query that data structure to find a node, and decode that node into useful data like strings and slices of strings.
+and then query that data structure to find a node. With a node you can then decode it into useful data like strings and slices of strings, or change it and re-save back to markdown.
 
-Specially `larkdown` takes an AST generated from the excellent [goldmark](https://github.com/yuin/goldmark) library for parsing [Commonmark](https://commonmark.org) markdown, and lest you query that AST. This makes it easy to take a markdown file, run it through Goldmark, query some structured data, and then finish using Goldmark to render the file to HTML.
+Specially `larkdown` takes an AST generated from the excellent [goldmark](https://github.com/yuin/goldmark) library for parsing [Commonmark](https://commonmark.org) markdown, and lest you query, update, and re-render that AST. This makes it easy to take a markdown file, run it through Goldmark, query some structured data, and then either finish using Goldmark to render the file to HTML, or make some updates and save back to markdown.
 
 ## Motivation
 
-I do a lot of cooking, and I keep my recipes as markdown files edited through [Obsidian](https://obsidian.md) for ease of authoring and portability. I wanted to write some tooling to make it easier to build grocery lists for the week, and wanted to take advantage of the fact that my recipes were already regularly structured, with an `## Ingredients` heading followed by a list. This library lets me pull out that ingredient data, so I can make a shopping list and get on with my weekend.
+This library acts as a test bed for an idea - markdown has the excellent property of being good for both machine and human reading. Therefor (with the right tooling) it should be possible to use Markdown files as an externally portable data store. You could author and edit data using one tool, and then serve it on the web (with editing capabilities) with another tool. And if you want to switch or give up a tool at some point, it's no problem - it's just markdown, you don't need to export or transform it.
+
+Larkdown is an attempt to build that tooling.
 
 ## Usage
 
 ```bash
 go get github.com/will-wow/larkdown
 ```
+
+You can use larkdown to pull out important data about a file before sending it to a frontend to be rendered:
 
 ```go
 package larkdown_test
@@ -176,6 +180,122 @@ func Example() {
 }
 ```
 
+Or you can use it to update a markdown file in-place, and still render to HTML afterwards:
+
+```go
+package markdown_test
+
+import (
+	"bytes"
+	"fmt"
+
+	"github.com/yuin/goldmark"
+	"github.com/yuin/goldmark/ast"
+	"github.com/yuin/goldmark/text"
+	"go.abhg.dev/goldmark/hashtag"
+
+	"github.com/will-wow/larkdown/gmast"
+	"github.com/will-wow/larkdown/match"
+	"github.com/will-wow/larkdown/query"
+	"github.com/will-wow/larkdown/renderer/markdown"
+)
+
+var postMarkdown = `
+# Markdown in Go
+
+## Tags
+
+#markdown #golang
+
+In this essay I will explain...
+`
+
+func ExampleNewRenderer() {
+	source := []byte(postMarkdown)
+	// Preprocess the markdown into goldmark AST
+	md := goldmark.New(
+		// Parse hashtags to they can be matched against.
+		goldmark.WithExtensions(
+			&hashtag.Extender{Variant: hashtag.ObsidianVariant},
+		),
+	)
+	doc := md.Parser().Parse(text.NewReader(source))
+
+	// ====
+	// Get the tags from the file
+	// ====
+
+	// Matcher for the tags line
+	tagsQuery := []match.Node{
+		match.Branch{Level: 2, Name: []byte("tags"), CaseInsensitive: true},
+		match.NodeOfKind{Kind: ast.KindParagraph},
+	}
+
+	// Find the tags header to append to
+	tagsLine, err := query.QueryOne(doc, source, tagsQuery)
+	if err != nil {
+		panic(fmt.Errorf("error finding tags heading: %w", err))
+	}
+
+	// ====
+	// Edit the AST to add a new tag
+	// ====
+
+	// Create a new tag
+	space, source := gmast.NewSpace(source)
+	hashtag, source := gmast.NewHashtag("testing", source)
+
+	// Append the new tag to the tags line
+	gmast.AppendChild(tagsLine,
+		space,
+		hashtag,
+	)
+
+	// ====
+	// Use larkdown renderer to render back to markdown
+	// ====
+	var newMarkdown bytes.Buffer
+	err = markdown.NewNodeRenderer().Render(&newMarkdown, source, doc)
+	if err != nil {
+		panic(fmt.Errorf("error rendering Markdown: %w", err))
+	}
+
+	// ====
+	// Also render to HTML
+	// ====
+	var html bytes.Buffer
+	err = md.Renderer().Render(&html, source, doc)
+	if err != nil {
+		panic(fmt.Errorf("error rendering HTML: %w", err))
+	}
+
+	// The new #testing tag is after the #golang tag in the HTML output
+	fmt.Println("HTML:")
+	fmt.Println(html.String())
+
+	// The new #testing tag is after the #golang tag in the markdown
+	fmt.Println("Markdown:")
+	fmt.Println(newMarkdown.String())
+
+	// Output:
+	// HTML:
+	// <h1>Markdown in Go</h1>
+	// <h2>Tags</h2>
+	// <p><span class="hashtag">#markdown</span> <span class="hashtag">#golang</span> <span class="hashtag">#testing</span></p>
+	// <p>In this essay I will explain...</p>
+	//
+	// Markdown:
+	// # Markdown in Go
+	//
+	// ## Tags
+	//
+	// #markdown #golang #testing
+	//
+	// In this essay I will explain...
+}
+
+```
+
 ## Roadmap
 
 - [x] basic querying and unmarshaling of headings, lists, and text
@@ -184,6 +304,10 @@ func Example() {
 - [x] tag matchers/decoders
 - [x] handle finding multiple matches
 - [x] generic matcher for any goldmark kind
+- [x] basic markdown renderer
+- [ ] Full markdown renderer
+- [x] Basic markdown editing tools
+- [ ] Move markdown editing tools
 - [ ] options for recording extra debugging data for failed matches
 - [ ] use options to support not setting a matcher or decoder
 - [ ] handle decoding a table into a slice of structs
@@ -194,11 +318,12 @@ func Example() {
 - [ ] add an "end on" option for branches, to end on the next subheading of a specific level
 - [ ] nth instance matcher for queries like "the second list"
 - [ ] query validator to make sure it even makes sense
-- [ ] string-based query syntax, ie. `"['# heading']['## heading2'].list[1]"`
+- [ ] query syntax based on CSS selectors
+- [ ] Update queries to fit with CSS selectors
+- [ ] cli for selector queries
 - [ ] generic unmarshaler into json
-- [ ] cli for string-based queries
 - [x] benchmark
-- [ ] more docs and tests
+- [x] more docs and tests
 
 ## Alternatives
 

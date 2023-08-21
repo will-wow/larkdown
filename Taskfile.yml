@@ -6,7 +6,7 @@ tasks:
     cmds:
       - go test -v {{.CLI_ARGS}} ./...
 
-  test-cover:
+  test:cover:
     desc: Run test suite with coverage
     cmds:
       - go test -coverpkg ./... -coverprofile=coverage.txt ./...
@@ -19,14 +19,14 @@ tasks:
 
   lint:
     desc: Run linters
-    deps: [lint-prettier, lint-go]
+    deps: [lint:prettier, lint:go]
 
-  lint-prettier:
+  lint:prettier:
     desc: Check if prettier has been run
     cmds:
       - npx prettier --check .
 
-  lint-go:
+  lint:go:
     desc: Run golangci-lint
     cmds:
       - go run github.com/golangci/golangci-lint/cmd/golangci-lint@v1.53.3 run
@@ -40,15 +40,15 @@ tasks:
 
   fmt:
     desc: Run all formatters
-    deps: [fmt-go, fmt-prettier]
+    deps: [fmt:go, fmt:prettier]
 
-  fmt-go:
+  fmt:go:
     desc: Run goimports
     cmds:
       - go mod tidy
       - go run golang.org/x/tools/cmd/goimports@v0.11.0 -w -local github.com/will-wow/larkdown .
 
-  fmt-prettier:
+  fmt:prettier:
     desc: Run prettier on non-go files
     cmds:
       - npx prettier --write .
