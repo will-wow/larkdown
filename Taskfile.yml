@@ -34,9 +34,9 @@ tasks:
   publish:
     desc: Publish a version
     cmds:
-      - git tag -a v{{.Version}} -m "Release v{{.Version}}"
-      - git push origin v{{.Version}}
-      - GOPROXY=proxy.golang.org go list -m github.com/will-wow/larkdown@v{{.Version}}
+      - git tag -a v{{.VERSION}} -m "Release v{{.VERSION}}"
+      - git push origin v{{.VERSION}}
+      - GOPROXY=proxy.golang.org go list -m github.com/will-wow/larkdown@v{{.VERSION}}
 
   fmt:
     desc: Run all formatters
