@@ -8,9 +8,9 @@ import (
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
 
+	"github.com/will-wow/larkdown"
 	"github.com/will-wow/larkdown/gmast"
 	"github.com/will-wow/larkdown/internal/test"
-	"github.com/will-wow/larkdown/renderer/markdown"
 )
 
 func TestAppendChild(t *testing.T) {
@@ -49,7 +49,7 @@ func TestAppendHeadingChild(t *testing.T) {
 
 	// Render back to markdown
 	var renderedMd bytes.Buffer
-	err := markdown.NewNodeRenderer().Render(&renderedMd, source, tree)
+	err := larkdown.NewNodeRenderer().Render(&renderedMd, source, tree)
 	require.NoError(t, err, "error rendering back to markdown")
 
 	require.Contains(t, renderedMd.String(), "P2\n\nP3", "P3 is not after P2 in MD")

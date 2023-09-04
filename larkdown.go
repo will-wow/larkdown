@@ -2,8 +2,11 @@ package larkdown
 
 import (
 	"github.com/yuin/goldmark/ast"
+	"github.com/yuin/goldmark/renderer"
+	"github.com/yuin/goldmark/util"
 
 	"github.com/will-wow/larkdown/match"
+	"github.com/will-wow/larkdown/mdrender"
 	"github.com/will-wow/larkdown/query"
 )
 
@@ -47,4 +50,9 @@ func FindAll[T any](
 	}
 
 	return
+}
+
+// NewNodeRenderer returns a new goldmark NodeRenderer with default config that renders nodes as Markdown.
+func NewNodeRenderer(opts ...mdrender.Option) renderer.Renderer {
+	return renderer.NewRenderer(renderer.WithNodeRenderers(util.Prioritized(mdrender.NewRenderer(opts...), 998)))
 }

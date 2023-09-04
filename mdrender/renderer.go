@@ -1,15 +1,19 @@
-package markdown
+package mdrender
 
 import (
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/renderer"
 	"github.com/yuin/goldmark/util"
 	"go.abhg.dev/goldmark/hashtag"
+	"gopkg.in/yaml.v2"
+
+	"github.com/will-wow/larkdown/mdfront"
 )
 
-// A Config struct has configurations for the HTML based renderers.
+// A Config struct has configuration for the markdown renderer.
 type Config struct {
-	Writer Writer
+	Writer      Writer // Writer is a writer used to write textual contents.
+	Frontmatter any    // Frontmatter is a frontmatter struct to be rendered to yaml.
 }
 
 // NewConfig returns a new Config with defaults.
@@ -55,11 +59,28 @@ func WithWriter(writer Writer) interface {
 	return &withWriter{writer}
 }
 
+type withFrontmatter struct {
+	data any
+}
+
+var _ Option = (*withFrontmatter)(nil)
+
+func (o *withFrontmatter) SetMarkdownOption(c *Config) {
+	c.Frontmatter = o.data
+}
+
+// WithFrontmatter records a frontmatter struct for repopulating the frontmatter.
+func WithFrontmatter(data any) Option {
+	return &withFrontmatter{data: data}
+}
+
 // A Renderer struct is an implementation of renderer.NodeRenderer that renders
 // nodes as Markdown.
 type Renderer struct {
 	Config
 }
+
+var _ renderer.NodeRenderer = &Renderer{}
 
 // NewRenderer returns a new Renderer with given options.
 func NewRenderer(opts ...Option) renderer.NodeRenderer {
@@ -100,6 +121,9 @@ func (r *Renderer) RegisterFuncs(reg renderer.NodeRendererFuncRegisterer) {
 	reg.Register(ast.KindText, r.renderText)
 	reg.Register(ast.KindString, r.renderString)
 	reg.Register(hashtag.Kind, r.renderHashtag)
+
+	// Frontmatter
+	reg.Register(mdfront.Kind, r.renderFrontmatter)
 }
 
 func (r *Renderer) writeLines(w util.BufWriter, source []byte, n ast.Node) {
@@ -384,6 +408,29 @@ func (r *Renderer) renderHashtag(w util.BufWriter, source []byte, node ast.Node,
 	return ast.WalkContinue, nil
 }
 
+// renderFrontmatter renders the configured frontmatter back to yaml.
+func (r *Renderer) renderFrontmatter(w util.BufWriter, source []byte, node ast.Node, entering bool) (ast.WalkStatus, error) {
+	if !entering {
+		return ast.WalkContinue, nil
+	}
+
+	if r.Config.Frontmatter == nil {
+		return ast.WalkContinue, nil
+	}
+
+	data, err := yaml.Marshal(r.Config.Frontmatter)
+	if err != nil {
+		return ast.WalkContinue, nil
+	}
+
+	// Print the frontmatter
+	_, _ = w.WriteString("---\n")
+	_, _ = w.Write(data)
+	_, _ = w.WriteString("---\n\n")
+
+	return ast.WalkContinue, nil
+}
+
 // A Writer interface writes textual contents to a writer.
 type Writer interface {
 	// Write writes the given source to writer with resolving references and unescaping
@@ -405,8 +452,3 @@ func (d *defaultWriter) Write(writer util.BufWriter, source []byte) {
 
 // DefaultWriter is a default instance of the Writer.
 var DefaultWriter = NewWriter()
-
-// NewNodeRenderer returns a new goldmark NodeRenderer with default config that renders nodes as Markdown.
-func NewNodeRenderer(opts ...Option) renderer.Renderer {
-	return renderer.NewRenderer(renderer.WithNodeRenderers(util.Prioritized(NewRenderer(opts...), 998)))
-}
