@@ -6,7 +6,6 @@ require (
 	github.com/lithammer/dedent v1.1.0
 	github.com/stretchr/testify v1.8.4
 	github.com/yuin/goldmark v1.5.4
-	github.com/yuin/goldmark-meta v1.1.0
 	go.abhg.dev/goldmark/frontmatter v0.1.0
 	go.abhg.dev/goldmark/hashtag v0.3.1
 	gopkg.in/yaml.v2 v2.3.0

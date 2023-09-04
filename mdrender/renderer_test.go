@@ -18,6 +18,7 @@ import (
 	"github.com/will-wow/larkdown"
 	"github.com/will-wow/larkdown/gmast"
 	"github.com/will-wow/larkdown/match"
+	"github.com/will-wow/larkdown/mdfront"
 	"github.com/will-wow/larkdown/mdrender"
 	"github.com/will-wow/larkdown/query"
 )
@@ -44,7 +45,6 @@ func TestStandaloneRenderer(t *testing.T) {
 	md := goldmark.New(
 		goldmark.WithExtensions(
 			&hashtag.Extender{Variant: hashtag.ObsidianVariant},
-			&frontmatter.Extender{},
 		),
 	)
 
@@ -120,9 +120,10 @@ func TestFrontMatter(t *testing.T) {
 	md := goldmark.New(
 		goldmark.WithExtensions(
 			&hashtag.Extender{Variant: hashtag.ObsidianVariant},
+			// Frontmatter parsing.
 			&frontmatter.Extender{},
-			// Support frontmatter rendering.
-			&mdrender.Extender{},
+			// Frontmatter rendering.
+			&mdfront.Extender{},
 		),
 		// Store a pointer to the struct now for later rendering.
 		goldmark.WithRenderer(larkdown.NewNodeRenderer(mdrender.WithFrontmatter(data))),

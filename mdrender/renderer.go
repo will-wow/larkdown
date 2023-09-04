@@ -6,12 +6,14 @@ import (
 	"github.com/yuin/goldmark/util"
 	"go.abhg.dev/goldmark/hashtag"
 	"gopkg.in/yaml.v2"
+
+	"github.com/will-wow/larkdown/mdfront"
 )
 
-// A Config struct has configurations for the HTML based renderers.
+// A Config struct has configuration for the markdown renderer.
 type Config struct {
-	Writer      Writer
-	Frontmatter any
+	Writer      Writer // Writer is a writer used to write textual contents.
+	Frontmatter any    // Frontmatter is a frontmatter struct to be rendered to yaml.
 }
 
 // NewConfig returns a new Config with defaults.
@@ -121,7 +123,7 @@ func (r *Renderer) RegisterFuncs(reg renderer.NodeRendererFuncRegisterer) {
 	reg.Register(hashtag.Kind, r.renderHashtag)
 
 	// Frontmatter
-	reg.Register(FrontmatterKind, r.renderFrontmatter)
+	reg.Register(mdfront.Kind, r.renderFrontmatter)
 }
 
 func (r *Renderer) writeLines(w util.BufWriter, source []byte, n ast.Node) {
@@ -422,9 +424,9 @@ func (r *Renderer) renderFrontmatter(w util.BufWriter, source []byte, node ast.N
 	}
 
 	// Print the frontmatter
-	w.WriteString("---\n")
-	w.Write(data)
-	w.WriteString("---\n\n")
+	_, _ = w.WriteString("---\n")
+	_, _ = w.Write(data)
+	_, _ = w.WriteString("---\n\n")
 
 	return ast.WalkContinue, nil
 }

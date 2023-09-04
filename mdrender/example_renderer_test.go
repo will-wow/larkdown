@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/yuin/goldmark"
-	meta "github.com/yuin/goldmark-meta"
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/text"
@@ -15,15 +14,12 @@ import (
 	"github.com/will-wow/larkdown"
 	"github.com/will-wow/larkdown/gmast"
 	"github.com/will-wow/larkdown/match"
+	"github.com/will-wow/larkdown/mdfront"
 	"github.com/will-wow/larkdown/mdrender"
 	"github.com/will-wow/larkdown/query"
 )
 
-var postMarkdown = `---
-slug: markdown-in-go
----
-
-# Markdown in Go
+var postMarkdown = `# Markdown in Go
 
 ## Tags
 
@@ -36,6 +32,14 @@ type PostData struct {
 	Slug string `yaml:"slug"`
 }
 
+// Matcher for a line of #tags under the heading ## Tags
+var tagsQuery = []match.Node{
+	match.Branch{Level: 2, Name: []byte("tags"), CaseInsensitive: true},
+	match.NodeOfKind{Kind: ast.KindParagraph},
+}
+
+var titleQuery = []match.Node{match.Heading{Level: 1}}
+
 func ExampleNewRenderer() {
 	source := []byte(postMarkdown)
 	// Preprocess the markdown into goldmark AST
@@ -43,9 +47,9 @@ func ExampleNewRenderer() {
 		goldmark.WithExtensions(
 			// Parse hashtags to they can be matched against.
 			&hashtag.Extender{Variant: hashtag.ObsidianVariant},
-			meta.Meta,
 			// Support frontmatter rendering.
-			&mdrender.Extender{},
+			// This does nothing on its own, but sets up a place to render frontmatter to.
+			&mdfront.Extender{},
 		),
 	)
 
@@ -57,12 +61,6 @@ func ExampleNewRenderer() {
 	// ====
 	// Get the tags from the file
 	// ====
-
-	// Matcher for the tags line
-	tagsQuery := []match.Node{
-		match.Branch{Level: 2, Name: []byte("tags"), CaseInsensitive: true},
-		match.NodeOfKind{Kind: ast.KindParagraph},
-	}
 
 	// Find the tags header to append to
 	tagsLine, err := query.QueryOne(doc, source, tagsQuery)
@@ -84,32 +82,30 @@ func ExampleNewRenderer() {
 		hashtag,
 	)
 
-	// Set up a struct to pull in the frontmatter
-	data := &PostData{}
+	// ====
+	// Add a slug to the post's frontmatter.
+	// ====
 
-	var slug string
-	// Populate the meta struct with the slug
-	contextSlug := meta.Get(context)["slug"]
-	if contextSlug == nil {
-		// Find the title header to use as a slug
-		title, err := larkdown.Find(doc, source, []match.Node{match.Heading{Level: 1}}, larkdown.DecodeText)
-		if err != nil {
-			panic(fmt.Errorf("error finding title: %w", err))
-		}
-
-		// Slugify the title
-		slug = strings.ReplaceAll(strings.ToLower(title), " ", "-")
-	} else {
-		// Otherwise keep the slug from the frontmatter
-		slug = fmt.Sprint(contextSlug)
+	// Find the title header to use as a slug
+	// In practice, you might want to also pull this frontmatter out of an existing document
+	// using goldmark-meta or goldmark-frontmatter.
+	title, err := larkdown.Find(doc, source, titleQuery, larkdown.DecodeText)
+	if err != nil {
+		panic(fmt.Errorf("error finding title: %w", err))
 	}
-	// Store the slug for re-rendering
-	data.Slug = slug
+
+	// Slugify the title
+	slug := strings.ReplaceAll(strings.ToLower(title), " ", "-")
+
+	// Set up a struct to render the frontmatter
+	data := &PostData{Slug: slug}
 
 	// ====
 	// Use larkdown renderer to render back to markdown
 	// ====
 	var newMarkdown bytes.Buffer
+	// Here we set up the renderer outside the goldmark.New call, so you can use the normal
+	// goldmark HTML renderer, and also render back to markdown.
 	err = larkdown.NewNodeRenderer(
 		// Pass the metaData to the renderer to render back to markdown
 		mdrender.WithFrontmatter(data),
