@@ -5,7 +5,7 @@ import (
 	"github.com/yuin/goldmark/renderer"
 	"github.com/yuin/goldmark/util"
 	"go.abhg.dev/goldmark/hashtag"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 
 	"github.com/will-wow/larkdown/mdfront"
 )

@@ -1,6 +1,6 @@
 module github.com/will-wow/larkdown
 
-go 1.20
+go 1.21
 
 require (
 	github.com/lithammer/dedent v1.1.0
@@ -8,7 +8,7 @@ require (
 	github.com/yuin/goldmark v1.5.4
 	go.abhg.dev/goldmark/frontmatter v0.1.0
 	go.abhg.dev/goldmark/hashtag v0.3.1
-	gopkg.in/yaml.v2 v2.3.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -17,5 +17,4 @@ require (
 	github.com/forPelevin/gomoji v1.1.3 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
