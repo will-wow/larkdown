@@ -57,7 +57,7 @@ func TestStandaloneRenderer(t *testing.T) {
 
 	// Print the ast if the test is going to fail
 	if string(source) != rendered.String() {
-		doc.Dump(source, 3)
+		doc.Dump(source, 4)
 	}
 
 	require.Equal(t, string(source), rendered.String())

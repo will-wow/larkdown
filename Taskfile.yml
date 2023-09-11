@@ -6,6 +6,11 @@ tasks:
     cmds:
       - go test -v {{.CLI_ARGS}} ./...
 
+  test:all:
+    desc: Run test suite without caching
+    cmds:
+      - go test -count=1 -v {{.CLI_ARGS}} ./...
+
   test:cover:
     desc: Run test suite with coverage
     cmds:
@@ -58,4 +63,4 @@ tasks:
     cmds:
       - task: fmt
       - task: lint
-      - task: test
+      - task: test:all

@@ -225,41 +225,81 @@ func (r *Renderer) renderHTMLBlock(w util.BufWriter, source []byte, node ast.Nod
 }
 
 func (r *Renderer) renderList(w util.BufWriter, source []byte, node ast.Node, entering bool) (ast.WalkStatus, error) {
-	if !entering {
+	if !entering && node.Parent().Kind() == ast.KindDocument && node.NextSibling() != nil {
 		_ = w.WriteByte('\n')
 	}
 	return ast.WalkContinue, nil
 }
 
+func indentListItemChild(w util.BufWriter, node ast.Node) {
+	indent := 0
+	for node.Parent() != nil {
+		list, ok := node.Parent().(*ast.List)
+		if ok {
+			if list.IsOrdered() {
+				indent += 3
+			} else {
+				indent += 2
+			}
+		}
+		node = node.Parent()
+	}
+
+	for i := 0; i < indent; i++ {
+		_ = w.WriteByte(' ')
+	}
+}
+
 func (r *Renderer) renderListItem(w util.BufWriter, source []byte, n ast.Node, entering bool) (ast.WalkStatus, error) {
-	// TODO: a more efficient way?
 	list, _ := n.Parent().(*ast.List)
-	ordered := list.IsOrdered()
 
 	if entering {
+		ordered := list.IsOrdered()
+
+		// Add indent for each parent list.
+		indentListItemChild(w, list)
+
 		if ordered {
 			_ = w.WriteByte('1')
 			_ = w.WriteByte(list.Marker)
 		} else {
 			_ = w.WriteByte(list.Marker)
 		}
-		_ = w.WriteByte(' ')
 
-		fc := n.FirstChild()
-		if fc != nil {
-			// TODO: Make sure this is still right
-			if _, ok := fc.(*ast.TextBlock); !ok {
-				_, _ = w.WriteString("\n")
-			}
+		// Add a space after the marker, before the children.
+		if n.HasChildren() {
+			_ = w.WriteByte(' ')
 		}
-	} else {
+	} else if listItemLineBreak(n, list.IsTight) {
 		_ = w.WriteByte('\n')
 	}
 	return ast.WalkContinue, nil
 }
 
+func listItemLineBreak(n ast.Node, isTight bool) bool {
+	// Skip adding a newline if the last child is a list (since it already does that).
+	lc := n.LastChild()
+	if lc != nil && lc.Kind() == ast.KindList {
+		return false
+	}
+
+	if !isTight {
+		nc := n.NextSibling()
+		if nc == nil || !nc.HasBlankPreviousLines() {
+			return false
+		}
+	}
+
+	return true
+}
+
 func (r *Renderer) renderParagraph(w util.BufWriter, source []byte, n ast.Node, entering bool) (ast.WalkStatus, error) {
-	if !entering {
+	if entering {
+		// If the paragraph is a child of a list item, indent it to match the list item.
+		if n.Parent().Kind() == ast.KindListItem && n.Parent().FirstChild() != n {
+			indentListItemChild(w, n)
+		}
+	} else {
 		if n.Parent().LastChild() == n {
 			_ = w.WriteByte('\n')
 		} else {
@@ -271,7 +311,6 @@ func (r *Renderer) renderParagraph(w util.BufWriter, source []byte, n ast.Node, 
 }
 
 func (r *Renderer) renderTextBlock(w util.BufWriter, source []byte, n ast.Node, entering bool) (ast.WalkStatus, error) {
-	// TODO: Check if this is right
 	if !entering {
 		if n.NextSibling() != nil && n.FirstChild() != nil {
 			_ = w.WriteByte('\n')
