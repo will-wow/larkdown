@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/yuin/goldmark"
+	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/text"
 	"go.abhg.dev/goldmark/hashtag"
 
@@ -27,11 +28,29 @@ Here's a long story about making dinner.
 - Vegetables
 - Salt
 - Pepper
+
+## Comments
+
+| Name      | Comment    |
+| --------- | ---------- |
+| Alice     | It's good! |
+| Bob       | It's bad   |
+
 `
+
+type Comment struct {
+	Name    string
+	Comment string
+}
+
+func (c Comment) String() string {
+	return fmt.Sprintf("%s: %s", c.Name, c.Comment)
+}
 
 type Recipe struct {
 	Tags        []string
 	Ingredients []string
+	Comments    []Comment
 	Html        bytes.Buffer
 }
 
@@ -41,6 +60,7 @@ func Example() {
 	md := goldmark.New(
 		// Parse hashtags to they can be matched against.
 		goldmark.WithExtensions(
+			extension.Table,
 			&hashtag.Extender{Variant: hashtag.ObsidianVariant},
 		),
 	)
@@ -83,30 +103,33 @@ func Example() {
 	}
 	recipe.Tags = tags
 
+	tableQuery := []match.Node{
+		match.Branch{Level: 2, Name: []byte("Comments")},
+		match.Table{},
+	}
+
 	// ====
-	// Render the HTML
+	// Get the comments from a table
 	// ====
-	err = md.Renderer().Render(&recipe.Html, source, doc)
+
+	// Get data from the comments table
+	commentsTable, err := larkdown.Find(doc, source, tableQuery, larkdown.DecodeTableToMap)
 	if err != nil {
-		panic(fmt.Errorf("error rendering HTML: %w", err))
+		panic(fmt.Errorf("error finding comments: %w", err))
+	}
+	for _, comment := range commentsTable {
+		recipe.Comments = append(recipe.Comments, Comment{
+			Name:    comment["Name"],
+			Comment: comment["Comment"],
+		})
 	}
 
 	fmt.Println(recipe.Ingredients)
 	fmt.Println(recipe.Tags)
-	fmt.Println(recipe.Html.String())
+	fmt.Println(recipe.Comments)
 
 	// Output:
 	// [Chicken Vegetables Salt Pepper]
 	// [dinner chicken]
-	// <h1>My Recipe</h1>
-	// <p>Here's a long story about making dinner.</p>
-	// <h2>Tags</h2>
-	// <p><span class="hashtag">#dinner</span> <span class="hashtag">#chicken</span></p>
-	// <h2>Ingredients</h2>
-	// <ul>
-	// <li>Chicken</li>
-	// <li>Vegetables</li>
-	// <li>Salt</li>
-	// <li>Pepper</li>
-	// </ul>
+	// [Alice: It's good! Bob: It's bad]
 }

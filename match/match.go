@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/yuin/goldmark/ast"
+	extension_ast "github.com/yuin/goldmark/extension/ast"
 	"go.abhg.dev/goldmark/hashtag"
 
 	"github.com/will-wow/larkdown/gmast"
@@ -192,6 +193,22 @@ func (m Tag) Match(node ast.Node, index int, source []byte) bool {
 
 func (m Tag) String() string {
 	return "[#tag]"
+}
+
+// Table matches a table that wraps rows and cells.
+type Table struct {
+	BaseNode
+}
+
+var _ Node = (*Table)(nil)
+
+func (m Table) Match(node ast.Node, index int, source []byte) bool {
+	_, ok := node.(*extension_ast.Table)
+	return ok
+}
+
+func (m Table) String() string {
+	return ".table"
 }
 
 // Wraps another query, only when it's the nth child of the parent.

@@ -53,7 +53,7 @@ Specially `larkdown` takes an AST generated from the excellent [goldmark](https:
 
 ## Motivation
 
-This library acts as a test bed for an idea - markdown has the excellent property of being good for both machine and human reading. Therefor (with the right tooling) it should be possible to use Markdown files as an externally portable data store. You could author and edit data using one tool, and then serve it on the web (with editing capabilities) with another tool. And if you want to switch or give up a tool at some point, it's no problem - it's just markdown, you don't need to export or transform it.
+This library acts as a test bed for an idea - markdown has the excellent property of being good for both machine and human reading. Therefor (with the right tooling) it should be possible to use Markdown files as an extremely portable data store. You can author and edit data using a markdown editor like [Obsidian](https://obsidian.md), use it to back a web application (with editing capabilities!), and write scripts to slice and dice the data. And if you want to switch or give up a tool at some point, it's no problem - it's just markdown, you don't need to export or transform it.
 
 Larkdown is an attempt to build that tooling.
 
@@ -73,6 +73,7 @@ import (
 	"fmt"
 
 	"github.com/yuin/goldmark"
+	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/text"
 	"go.abhg.dev/goldmark/hashtag"
 
@@ -95,11 +96,29 @@ Here's a long story about making dinner.
 - Vegetables
 - Salt
 - Pepper
+
+## Comments
+
+| Name      | Comment    |
+| --------- | ---------- |
+| Alice     | It's good! |
+| Bob       | It's bad   |
+
 `
+
+type Comment struct {
+	Name    string
+	Comment string
+}
+
+func (c Comment) String() string {
+	return fmt.Sprintf("%s: %s", c.Name, c.Comment)
+}
 
 type Recipe struct {
 	Tags        []string
 	Ingredients []string
+	Comments    []Comment
 	Html        bytes.Buffer
 }
 
@@ -109,6 +128,7 @@ func Example() {
 	md := goldmark.New(
 		// Parse hashtags to they can be matched against.
 		goldmark.WithExtensions(
+			extension.Table,
 			&hashtag.Extender{Variant: hashtag.ObsidianVariant},
 		),
 	)
@@ -151,33 +171,37 @@ func Example() {
 	}
 	recipe.Tags = tags
 
+	tableQuery := []match.Node{
+		match.Branch{Level: 2, Name: []byte("Comments")},
+		match.Table{},
+	}
+
 	// ====
-	// Render the HTML
+	// Get the comments from a table
 	// ====
-	err = md.Renderer().Render(&recipe.Html, source, doc)
+
+	// Get data from the comments table
+	commentsTable, err := larkdown.Find(doc, source, tableQuery, larkdown.DecodeTableToMap)
 	if err != nil {
-		panic(fmt.Errorf("error rendering HTML: %w", err))
+		panic(fmt.Errorf("error finding comments: %w", err))
+	}
+	for _, comment := range commentsTable {
+		recipe.Comments = append(recipe.Comments, Comment{
+			Name:    comment["Name"],
+			Comment: comment["Comment"],
+		})
 	}
 
 	fmt.Println(recipe.Ingredients)
 	fmt.Println(recipe.Tags)
-	fmt.Println(recipe.Html.String())
+	fmt.Println(recipe.Comments)
 
 	// Output:
 	// [Chicken Vegetables Salt Pepper]
 	// [dinner chicken]
-	// <h1>My Recipe</h1>
-	// <p>Here's a long story about making dinner.</p>
-	// <h2>Tags</h2>
-	// <p><span class="hashtag">#dinner</span> <span class="hashtag">#chicken</span></p>
-	// <h2>Ingredients</h2>
-	// <ul>
-	// <li>Chicken</li>
-	// <li>Vegetables</li>
-	// <li>Salt</li>
-	// <li>Pepper</li>
-	// </ul>
+	// [Alice: It's good! Bob: It's bad]
 }
+
 ```
 
 Or you can use it to update a markdown file in-place, and still render to HTML afterwards:
@@ -352,10 +376,10 @@ func ExampleNewRenderer() {
 - [ ] Move markdown editing tools
 - [ ] options for recording extra debugging data for failed matches
 - [ ] use options to support not setting a matcher or decoder
-- [ ] handle decoding a table into a slice of structs
 - [ ] handle a list of matchers for FindAll extractors
 - [ ] matchers/decoders for more nodes:
   - [ ] codeblocks by language
+  - [x] tables with slice of string map output
   - [ ] tables with structured output
 - [ ] add an "end on" option for branches, to end on the next subheading of a specific level
 - [ ] nth instance matcher for queries like "the second list"
