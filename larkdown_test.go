@@ -28,6 +28,23 @@ func TestFind(t *testing.T) {
 
 		require.Equal(t, []string{"1 Medium Apple", "1 small-medium carrot", "1 banana", "2 eggs"}, list)
 	})
+
+	t.Run("Errors when there is no match", func(t *testing.T) {
+		doc, source := test.TreeFromMd(t, `# Test`)
+
+		matcher := []match.Node{match.Heading{Level: 2}}
+		_, err := larkdown.Find(doc, source, matcher, larkdown.DecodeText)
+		require.ErrorContains(t, err, "failed to match query")
+	})
+
+	t.Run("returns no error when there is no match but allowNoMatch is on", func(t *testing.T) {
+		doc, source := test.TreeFromMd(t, `# Test`)
+
+		matcher := []match.Node{match.Heading{Level: 2}}
+		out, err := larkdown.Find(doc, source, matcher, larkdown.DecodeText, larkdown.FindAllowNoMatch())
+		require.NoError(t, err, "passes with no results")
+		require.Equal(t, "", out, "returns empty value")
+	})
 }
 
 func TestFindAll(t *testing.T) {
@@ -74,6 +91,33 @@ func TestFindAll(t *testing.T) {
 		require.NoError(t, err)
 
 		require.Equal(t, []string{"tag1", "tag2", "tag3"}, tags)
+	})
+}
+func TestFindAllErrors(t *testing.T) {
+	doc, source := test.TreeFromMd(t, `# Test`, goldmark.WithExtensions(
+		&hashtag.Extender{
+			Variant: hashtag.ObsidianVariant,
+		},
+	))
+
+	t.Run("error when there is no match from the matcher", func(t *testing.T) {
+		matcher := []match.Node{match.Heading{Level: 2}}
+		_, err := larkdown.FindAll(doc, source, matcher, match.Tag{}, larkdown.DecodeTag)
+		require.ErrorContains(t, err, "failed to match query")
+	})
+
+	t.Run("no error when there is no match from the extractor", func(t *testing.T) {
+		matcher := []match.Node{match.Heading{Level: 1}}
+		out, err := larkdown.FindAll(doc, source, matcher, match.Tag{}, larkdown.DecodeTag)
+		require.NoError(t, err, "failed to match query")
+		require.Equal(t, []string{}, out)
+	})
+
+	t.Run("no error when there is no match from the matcher but AllowNoMatch is on", func(t *testing.T) {
+		matcher := []match.Node{match.Heading{Level: 2}}
+		out, err := larkdown.FindAll(doc, source, matcher, match.Tag{}, larkdown.DecodeTag, larkdown.FindAllAllowNoMatch())
+		require.NoError(t, err, "failed to match query")
+		require.Nil(t, out, "returns nil")
 	})
 }
 
